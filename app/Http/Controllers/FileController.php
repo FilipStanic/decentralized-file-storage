@@ -167,4 +167,24 @@ class FileController extends Controller
 
         return redirect()->back()->with('success', 'File deleted successfully');
     }
+
+    public function rename(Request $request, $id)
+    {
+        $file = File::findOrFail($id);
+
+        // Check permissions
+        if (Gate::denies('update', $file)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $file->update([
+            'name' => $request->name,
+        ]);
+
+        return redirect()->back();
+    }
 }

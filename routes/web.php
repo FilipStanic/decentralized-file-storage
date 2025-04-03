@@ -26,17 +26,11 @@ Route::get('/', function () {
 
 // File management routes - all require authentication
 Route::middleware(['auth'])->group(function () {
-    // File upload route
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
-
-    // File download route
     Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
-
-    // Toggle star status
     Route::post('/files/{file}/toggle-star', [FileController::class, 'toggleStar'])->name('files.toggle-star');
-
-    // Delete file
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
+    Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
 });
 
 // Profile routes

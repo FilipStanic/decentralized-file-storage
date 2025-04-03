@@ -30,14 +30,12 @@ export const HomePage = ({ auth, recentFiles = [], quickAccessFiles = [] }) => {
     const modalRef = useRef(null);
     const fileInputRef = useRef(null);
     const isAuthenticated = auth && auth.user;
-    const { darkMode, toggleTheme } = useTheme();
 
-    // Inertia form for file uploads
     const { data, setData, post, processing, progress, errors, reset } = useForm({
         file: null,
     });
 
-    // Close dropdown when clicking outside
+
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -207,23 +205,6 @@ export const HomePage = ({ auth, recentFiles = [], quickAccessFiles = [] }) => {
                                                 <User size={16} className="mr-2" />
                                                 Profile
                                             </Link>
-
-                                            <button
-                                                onClick={toggleTheme}
-                                                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
-                                            >
-                                                {darkMode ? (
-                                                    <>
-                                                        <Sun size={16} className="mr-2" />
-                                                        Light Mode
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Moon size={16} className="mr-2" />
-                                                        Dark Mode
-                                                    </>
-                                                )}
-                                            </button>
 
                                             <Link
                                                 href={route('logout')}
