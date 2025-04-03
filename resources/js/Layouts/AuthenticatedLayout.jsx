@@ -4,8 +4,6 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { useTheme } from '@/Components/ThemeProvider';
-import { Moon, Sun } from 'lucide-react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -13,7 +11,6 @@ export default function AuthenticatedLayout({ header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
 
-    const { darkMode, toggleTheme } = useTheme();
 
     return (
         <div className={`min-h-screen bg-gray-100 dark:bg-gray-900`}>
@@ -38,17 +35,6 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            <button
-                                onClick={toggleTheme}
-                                className="inline-flex items-center rounded-md border border-transparent bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium leading-4 text-gray-500 dark:text-gray-300 transition duration-150 ease-in-out hover:text-gray-700 dark:hover:text-white focus:outline-none mr-3"
-                            >
-                                {darkMode ? (
-                                    <><Sun className="h-4 w-4 mr-1" /> Light</>
-                                ) : (
-                                    <><Moon className="h-4 w-4 mr-1" /> Dark</>
-                                )}
-                            </button>
-
                             <div className="relative ms-3">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -171,14 +157,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                 as="button"
                             >
                                 Log Out
-                            </ResponsiveNavLink>
-
-                            {/* Theme toggle button for mobile */}
-                            <ResponsiveNavLink
-                                as="button"
-                                onClick={toggleTheme}
-                            >
-                                {darkMode ? 'Light Mode' : 'Dark Mode'}
                             </ResponsiveNavLink>
                         </div>
                     </div>

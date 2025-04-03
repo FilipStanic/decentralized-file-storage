@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { Search, Plus, LogIn, User, LogOut, Settings, File, FileText, Image, FilePlus, Folder,
     MoreVertical, Download, Share2, Trash2, Star, X, Moon, Sun } from "lucide-react";
 import { Link, useForm } from "@inertiajs/react";
-import { useTheme } from '@/Components/ThemeProvider';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -318,8 +317,10 @@ export const HomePage = ({ auth, recentFiles = [], quickAccessFiles = [] }) => {
                                             </div>
                                             <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1">
                                                 <Link
-                                                    href={route('files.download', file.id)}
-                                                    className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                                    onClick={() => {
+                                                        window.location.href = route('files.download', file.id);
+                                                    }}
+                                                    className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
                                                 >
                                                     <Download size={18} />
                                                 </Link>

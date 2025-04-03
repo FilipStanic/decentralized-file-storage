@@ -119,17 +119,21 @@ class FileController extends Controller
     {
         $file = File::findOrFail($id);
 
-        // Check permissions
-        if (Gate::denies('download', $file)) {
+        if (Auth::id() !== $file->user_id) {
             abort(403);
         }
 
-        // Update last accessed
-        $file->update(['last_accessed' => now()]);
+        $fullPath = storage_path('app/private/' . $file->path);
 
-        return Storage::disk('private')->download($file->path, $file->original_name);
+        if (!file_exists($fullPath)) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+
+        return response()->file($fullPath, [
+            'Content-Disposition' => 'attachment; filename="' . $file->original_name . '"',
+            'Content-Type' => $file->mime_type
+        ]);
     }
-
     /**
      * Toggle star status for a file
      */

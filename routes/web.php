@@ -24,10 +24,9 @@ Route::get('/', function () {
     ], $fileData));
 })->name('home');
 
-// File management routes - all require authentication
 Route::middleware(['auth'])->group(function () {
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
-    Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
+    Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
     Route::post('/files/{file}/toggle-star', [FileController::class, 'toggleStar'])->name('files.toggle-star');
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
