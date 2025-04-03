@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate; // Added this import
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -18,7 +18,6 @@ class FileController extends Controller
     {
         $user = Auth::user();
 
-        // Get recently accessed files
         $recentFiles = $user->files()
             ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('last_accessed', 'desc')
@@ -37,7 +36,6 @@ class FileController extends Controller
                 ];
             });
 
-        // Get quick access files (starred or recently accessed)
         $quickAccessFiles = $user->files()
             ->where(function($query) {
                 $query->where('starred', true)
@@ -75,13 +73,10 @@ class FileController extends Controller
         $file = $request->file('file');
         $user = Auth::user();
 
-        // Generate a unique filename
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
 
-        // Store the file
         $path = $file->storeAs('files/' . $user->id, $filename, 'private');
 
-        // Determine file type based on mime type
         $mimeType = $file->getMimeType();
         $type = 'Other';
 
@@ -97,7 +92,6 @@ class FileController extends Controller
             $type = 'Document';
         }
 
-        // Create file record
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
             'original_name' => $file->getClientOriginalName(),
@@ -141,11 +135,11 @@ class FileController extends Controller
     {
         $file = File::findOrFail($id);
 
-        // Check permissions
         if (Gate::denies('update', $file)) {
             abort(403);
         }
 
+        $file->timestamps = false;
         $file->update(['starred' => !$file->starred]);
 
         return redirect()->back();
@@ -158,15 +152,12 @@ class FileController extends Controller
     {
         $file = File::findOrFail($id);
 
-        // Use Gate facade to check permission
         if (Gate::denies('delete', $file)) {
             abort(403);
         }
 
-        // Delete the file from storage
         Storage::disk('private')->delete($file->path);
 
-        // Delete the record
         $file->delete();
 
         return redirect()->back()->with('success', 'File deleted successfully');
@@ -176,7 +167,6 @@ class FileController extends Controller
     {
         $file = File::findOrFail($id);
 
-        // Check permissions
         if (Gate::denies('update', $file)) {
             abort(403);
         }
