@@ -1,5 +1,4 @@
-// Updated RecentFiles.jsx with move-to-folder functionality
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@inertiajs/react';
 import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal } from 'lucide-react';
 import axios from 'axios';
@@ -26,8 +25,22 @@ export const RecentFiles = ({ recentFiles }) => {
     const [folders, setFolders] = useState([]);
     const [openDropdown, setOpenDropdown] = useState(null);
     const [loading, setLoading] = useState(true);
+    const dropdownRef = useRef(null);
 
-    // Fetch folders for the dropdown
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpenDropdown(null);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [dropdownRef]);
+
+
     useEffect(() => {
         axios.get(route('sidebar.data'))
             .then(response => {
@@ -117,7 +130,7 @@ export const RecentFiles = ({ recentFiles }) => {
                                 </Link>
 
                                 {/* Move to folder dropdown */}
-                                <div className="relative">
+                                <div className="relative" ref={dropdownRef}>
                                     <button
                                         onClick={() => setOpenDropdown(openDropdown === file.id ? null : file.id)}
                                         className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -126,7 +139,7 @@ export const RecentFiles = ({ recentFiles }) => {
                                     </button>
 
                                     {openDropdown === file.id && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 py-1 border dark:border-gray-700">
+                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700">
                                             <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
                                                 Move to folder
                                             </div>

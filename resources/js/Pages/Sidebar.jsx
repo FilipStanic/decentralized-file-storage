@@ -54,12 +54,23 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
             <div className="mt-2 flex-1 overflow-y-auto">
                 <div className="mb-4">
                     <Link
-                        href={route('folders.show')}
+                        href={route('home')}
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
                         <FolderIcon size={18} className="text-indigo-500" />
                         <span className="text-gray-800 dark:text-gray-200">All Files</span>
                     </Link>
+
+
+                    <Link
+                        href={route('folders.show')}
+                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                    >
+                        <FolderIcon size={18} className="text-blue-500" />
+                        <span className="text-gray-800 dark:text-gray-200">All Folders</span>
+                    </Link>
+
+
 
                     <Link
                         href="#"
@@ -95,6 +106,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                                     key={folder.id}
                                     href={route('folders.show', folder.id)}
                                     className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                                    preserveScroll={true}
                                 >
                                     <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
                                     <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>

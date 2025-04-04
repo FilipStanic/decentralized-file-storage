@@ -21,9 +21,9 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                                 <h1 className="font-bold text-lg">BlockStore</h1>
                             </Link>
 
-                            <Link href={route('home')} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
-                                &larr; Back to Dashboard
-                            </Link>
+                            {/*<Link href={route('home')} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm">*/}
+                            {/*    &larr; Back to Dashboard*/}
+                            {/*</Link>*/}
                         </div>
                     </div>
                 </header>

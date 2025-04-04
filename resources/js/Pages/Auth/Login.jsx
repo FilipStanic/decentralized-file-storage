@@ -24,9 +24,11 @@ export default function Login({ status, canResetPassword }) {
         <div className="flex min-h-screen bg-gray-50">
             {/* Left side with logo */}
             <div className="hidden md:flex md:w-1/2 bg-indigo-600 flex-col justify-center items-center text-white p-12">
-                <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mb-6">
-                    <span className="text-white text-2xl font-bold">B</span>
-                </div>
+                <Link href={route('home')} className="mb-6 transition-transform hover:scale-105">
+                    <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-2xl font-bold">B</span>
+                    </div>
+                </Link>
                 <h1 className="text-3xl font-bold mb-6">Welcome to BlockStore</h1>
                 <p className="text-lg text-center max-w-md">
                     Your secure decentralized file storage solution. Sign in to access your files from anywhere.

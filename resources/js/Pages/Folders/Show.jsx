@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { FolderIcon, ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
 import axios from 'axios';
@@ -28,7 +28,7 @@ const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
     return (
         <div className="flex items-center overflow-x-auto whitespace-nowrap my-4 pb-2">
             <Link href={route('folders.show')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                All Files
+                Folders
             </Link>
 
             {breadcrumbs.map((breadcrumb, index) => (
@@ -55,6 +55,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
     const [processingFolder, setProcessingFolder] = useState(false);
 
     const fileInputRef = useRef(null);
+    const dropdownRef = useRef(null);
     const isAuthenticated = auth && auth.user;
 
     const [data, setData] = useState({
@@ -63,6 +64,19 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [progress, setProgress] = useState(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const handleMoveFile = (fileId, folderId) => {
         axios.post(route('files.move', fileId), {
@@ -331,7 +345,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                                 </button>
 
                                                 {dropdownOpen && selectedFileId === file.id && (
-                                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 py-1 border dark:border-gray-700">
+                                                    <div ref={dropdownRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700">
                                                         <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
                                                             Move to folder
                                                         </div>

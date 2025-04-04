@@ -45,9 +45,6 @@ export const Header = ({
             <div className="flex items-center gap-4">
                 {isAuthenticated ? (
                     <>
-                        <button className="px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200">
-                            Upgrade
-                        </button>
                         <div className="relative" ref={dropdownRef}>
                             <div
                                 className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
