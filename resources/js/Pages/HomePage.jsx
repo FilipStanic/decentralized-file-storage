@@ -137,18 +137,19 @@ export const HomePage = ({
         setDropdownOpen(prev => !prev);
     };
 
-    // Handle file upload from the WelcomeSection
+
     const handleUploadFromWelcome = () => {
-        // If we already have a file set, submit the form
+
         if (data.file) {
             handleSubmit();
         } else {
-            // Otherwise, show the upload modal
+
             setShowUploadModal(true);
         }
     };
 
     return (
+
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
             {/* Sidebar - pass the updated handler */}
             <Sidebar

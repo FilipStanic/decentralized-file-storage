@@ -185,7 +185,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
 
     return (
         <>
-            <Head title={currentFolder ? currentFolder.name : 'All Files'} />
+            <Head title={currentFolder ? currentFolder.name : 'All Folders'} />
 
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
                 {/* Sidebar */}
