@@ -23,7 +23,7 @@ class FileController extends Controller
             ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('last_accessed', 'desc')
             ->orderBy('updated_at', 'desc')
-            ->limit(5)
+            ->limit(20)
             ->get()
             ->map(function ($file) {
                 return [
