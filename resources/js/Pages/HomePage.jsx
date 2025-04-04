@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
 import axios from 'axios';
+import { Search } from 'lucide-react';
 
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -23,6 +24,16 @@ export const HomePage = ({
     const [processingFolder, setProcessingFolder] = useState(false);
     const [currentFolderId, setCurrentFolderId] = useState(null);
 
+    // Search state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filteredRecentFiles, setFilteredRecentFiles] = useState(recentFiles);
+    const [filteredQuickAccessFiles, setFilteredQuickAccessFiles] = useState(quickAccessFiles);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [uniqueResultsCount, setUniqueResultsCount] = useState(0);
+
+    // Keep track of displayed files to avoid duplicates in UI
+    const [displayedFileIds, setDisplayedFileIds] = useState(new Set());
+
     const dropdownRef = useRef(null);
     const modalRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -43,12 +54,10 @@ export const HomePage = ({
 
     useEffect(() => {
         function handleClickOutside(event) {
-            // Close dropdown if clicked outside
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
             }
 
-            // Close modal if clicked outside
             if (modalRef.current && !modalRef.current.contains(event.target) && showUploadModal) {
                 setShowUploadModal(false);
                 reset();
@@ -61,7 +70,12 @@ export const HomePage = ({
         };
     }, [dropdownRef, modalRef, showUploadModal]);
 
-    // Modified to handle different creation types
+    // Initialize filtered files on component mount
+    useEffect(() => {
+        setFilteredRecentFiles(recentFiles);
+        setFilteredQuickAccessFiles(quickAccessFiles);
+    }, [recentFiles, quickAccessFiles]);
+
     const handleCreateNew = (type = 'file') => {
         if (type === 'folder') {
             setShowFolderModal(true);
@@ -94,14 +108,13 @@ export const HomePage = ({
         });
     };
 
-    // Function to handle folder creation
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
 
         axios.post(route('folders.store'), folderData)
             .then(response => {
                 setShowFolderModal(false);
-                window.location.reload(); // Refresh to see the new folder
+                window.location.reload();
             })
             .catch(error => {
                 console.error('Error creating folder:', error);
@@ -111,7 +124,6 @@ export const HomePage = ({
             });
     };
 
-    // Handle drag events
     const handleDrag = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -137,34 +149,110 @@ export const HomePage = ({
         setDropdownOpen(prev => !prev);
     };
 
-
     const handleUploadFromWelcome = () => {
-
         if (data.file) {
             handleSubmit();
         } else {
-
             setShowUploadModal(true);
         }
     };
 
-    return (
+    // Handle search
+    const handleSearch = (term) => {
+        setSearchTerm(term);
+        setDisplayedFileIds(new Set()); // Reset displayed file IDs
 
-        <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-            {/* Sidebar - pass the updated handler */}
+        if (!term.trim()) {
+            // If search is cleared, reset to original files
+            setFilteredRecentFiles(recentFiles);
+            setFilteredQuickAccessFiles(quickAccessFiles);
+            setShowSearchResults(false);
+            setUniqueResultsCount(0);
+            return;
+        }
+
+        // Set flag to show search results
+        setShowSearchResults(true);
+
+        // First, collect all matching files
+        const allMatchingFiles = new Map(); // Use a Map to store unique files by ID
+
+        // Process recent files
+        recentFiles.forEach(file => {
+            if (file.name.toLowerCase().includes(term.toLowerCase())) {
+                // Use file.id as the key to ensure uniqueness
+                allMatchingFiles.set(file.id, {
+                    ...file,
+                    source: 'recent'
+                });
+            }
+        });
+
+        // Process quick access files
+        quickAccessFiles.forEach(file => {
+            if (file.name.toLowerCase().includes(term.toLowerCase())) {
+                // If this file is already in the map, prioritize quick access
+                allMatchingFiles.set(file.id, {
+                    ...file,
+                    source: allMatchingFiles.has(file.id) ? 'both' : 'quickAccess'
+                });
+            }
+        });
+
+        // Convert map values back to arrays for the UI
+        const uniqueMatchingFiles = Array.from(allMatchingFiles.values());
+
+        // Split into quick access and recent, ensuring no duplicates
+        const quickAccessResults = uniqueMatchingFiles
+            .filter(file => file.source === 'quickAccess' || file.source === 'both');
+
+        const recentResults = uniqueMatchingFiles
+            .filter(file => file.source === 'recent' && !quickAccessResults.some(qaf => qaf.id === file.id));
+
+        setFilteredQuickAccessFiles(quickAccessResults);
+        setFilteredRecentFiles(recentResults);
+        setUniqueResultsCount(uniqueMatchingFiles.length);
+    };
+
+    // Check if a file should be displayed in the results
+    const shouldDisplayFile = (fileId) => {
+        if (displayedFileIds.has(fileId)) {
+            return false;
+        }
+
+        // Mark the file as displayed
+        setDisplayedFileIds(prev => new Set([...prev, fileId]));
+        return true;
+    };
+
+    return (
+        <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative">
             <Sidebar
                 expanded={expanded}
                 onCreateNew={handleCreateNew}
             />
 
-            {/* Main content */}
-            <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900">
-                {/* Header */}
+            <div className="flex-1 p-4 pt-12 lg:pt-4 overflow-auto bg-gray-50 dark:bg-gray-900">
                 <Header
                     isAuthenticated={isAuthenticated}
                     auth={auth}
                     onUserDropdownToggle={toggleUserDropdown}
+                    onSearch={handleSearch}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
                 />
+
+                {/* Show search status if searching */}
+                {showSearchResults && searchTerm.trim() && (
+                    <div className="mb-4">
+                        <h2 className="text-lg font-medium text-gray-800 dark:text-white">
+                            Search results for "{searchTerm}"
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {uniqueResultsCount} {uniqueResultsCount === 1 ? 'result' : 'results'} found
+                        </p>
+                    </div>
+                )}
 
                 {isAuthenticated ? (
                     (quickAccessFiles.length === 0 && recentFiles.length === 0) ? (
@@ -180,11 +268,55 @@ export const HomePage = ({
                         />
                     ) : (
                         <>
-                            {/* Quick access section */}
-                            <QuickAccessFiles quickAccessFiles={quickAccessFiles} />
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 md:mb-0">
+                                    {showSearchResults ? 'Search Results' : 'My Files'}
+                                </h2>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => handleCreateNew('file')}
+                                        className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex-1 md:flex-none"
+                                    >
+                                        <span>Upload</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleCreateNew('folder')}
+                                        className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white text-sm flex-1 md:flex-none"
+                                    >
+                                        <span>New Folder</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                            {/* Recent files section */}
-                            <RecentFiles recentFiles={recentFiles} />
+                            {/* Show 'No results found' message when searching with no results */}
+                            {showSearchResults && searchTerm.trim() && uniqueResultsCount === 0 ? (
+                                <div className="text-center py-10 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                                    <div className="inline-flex rounded-full bg-gray-100 dark:bg-gray-700 p-4 mb-4">
+                                        <Search size={24} className="text-gray-500 dark:text-gray-400" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">No results found</h3>
+                                    <p className="mt-2 text-gray-500 dark:text-gray-400">
+                                        We couldn't find any files or folders matching "{searchTerm}".<br />
+                                        Try using different keywords or checking for typos.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Only show Quick Access section if there are filtered results or not searching */}
+                                    {(filteredQuickAccessFiles.length > 0 || !showSearchResults) && (
+                                        <QuickAccessFiles
+                                            quickAccessFiles={filteredQuickAccessFiles}
+                                        />
+                                    )}
+
+                                    {/* Only show Recent Files section if there are filtered results or not searching */}
+                                    {(filteredRecentFiles.length > 0 || !showSearchResults) && (
+                                        <RecentFiles
+                                            recentFiles={filteredRecentFiles}
+                                        />
+                                    )}
+                                </>
+                            )}
                         </>
                     )
                 ) : (
@@ -194,7 +326,6 @@ export const HomePage = ({
                 )}
             </div>
 
-            {/* Hidden file input for uploading */}
             <input
                 type="file"
                 ref={fileInputRef}
@@ -202,7 +333,6 @@ export const HomePage = ({
                 className="hidden"
             />
 
-            {/* Upload Modal */}
             <UploadModal
                 isOpen={showUploadModal}
                 onClose={() => {
@@ -223,7 +353,6 @@ export const HomePage = ({
                 folderId={currentFolderId}
             />
 
-            {/* Create Folder Modal */}
             <CreateFolderModal
                 isOpen={showFolderModal}
                 onClose={() => setShowFolderModal(false)}

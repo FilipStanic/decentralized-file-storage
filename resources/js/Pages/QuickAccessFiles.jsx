@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import { Star, File, FileText, Image, FilePlus } from 'lucide-react';
+import { Star, File, FileText, Image, FilePlus, FolderIcon } from 'lucide-react';
 
-// Reusable function to get file icon
 const getFileIcon = (type) => {
     switch (type) {
         case 'Image':
@@ -21,6 +20,9 @@ const getFileIcon = (type) => {
 };
 
 export const QuickAccessFiles = ({ quickAccessFiles }) => {
+    // Create a copy and reverse the array to show newest files on the left
+    const reversedFiles = [...quickAccessFiles].reverse();
+
     return (
         <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
@@ -29,18 +31,21 @@ export const QuickAccessFiles = ({ quickAccessFiles }) => {
 
             {quickAccessFiles.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {quickAccessFiles.map((file) => (
+                    {reversedFiles.map((file) => (
                         <div
-                            key={file.id}
+                            key={`${file.type}-${file.id}`}
                             className="p-4 border dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow flex flex-col bg-white dark:bg-gray-800"
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                    {getFileIcon(file.type)}
+                                    {file.type === 'folder' ?
+                                        <FolderIcon size={24} style={{ color: file.color || '#6366F1' }} /> :
+                                        getFileIcon(file.type)
+                                    }
                                 </div>
                                 <Link
                                     as="button"
-                                    href={route('files.toggle-star', file.id)}
+                                    href={file.type === 'folder' ? route('folders.toggle-star', file.id) : route('files.toggle-star', file.id)}
                                     method="post"
                                     className="text-gray-400 hover:text-yellow-400"
                                 >

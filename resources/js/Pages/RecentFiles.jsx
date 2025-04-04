@@ -3,7 +3,6 @@ import { Link } from '@inertiajs/react';
 import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal } from 'lucide-react';
 import axios from 'axios';
 
-// Reusable function to get file icon
 const getFileIcon = (type) => {
     switch (type) {
         case 'Image':
@@ -38,7 +37,7 @@ export const RecentFiles = ({ recentFiles }) => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [dropdownRef]);
+    }, []);
 
 
     useEffect(() => {
@@ -53,7 +52,6 @@ export const RecentFiles = ({ recentFiles }) => {
             });
     }, []);
 
-    // Handle moving a file to a folder
     const handleMoveFile = (fileId, folderId) => {
         axios.post(route('files.move', fileId), {
             folder_id: folderId
@@ -129,10 +127,11 @@ export const RecentFiles = ({ recentFiles }) => {
                                     />
                                 </Link>
 
-                                {/* Move to folder dropdown */}
                                 <div className="relative" ref={dropdownRef}>
                                     <button
-                                        onClick={() => setOpenDropdown(openDropdown === file.id ? null : file.id)}
+                                        onClick={() => {
+                                            setOpenDropdown(prev => prev === file.id ? null : file.id);
+                                        }}
                                         className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                                     >
                                         <MoreHorizontal size={18} />

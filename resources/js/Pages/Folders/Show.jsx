@@ -214,22 +214,22 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
 
                     {/* Folder title */}
                     <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-2xl font-semibold dark:text-white">
+                        <h1 className="text-xl sm:text-2xl font-semibold dark:text-white">
                             {currentFolder ? currentFolder.name : 'All Files'}
                         </h1>
                         <div className="flex items-center space-x-2">
                             <button
                                 onClick={handleUpload}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
                             >
-                                <FilePlus size={16} />
+                                <FilePlus size={16} className="hidden sm:block" />
                                 <span>Upload</span>
                             </button>
                             <button
                                 onClick={handleNewFolder}
-                                className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
+                                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white text-sm"
                             >
-                                <Plus size={16} />
+                                <Plus size={16} className="hidden sm:block" />
                                 <span>New Folder</span>
                             </button>
                         </div>

@@ -1,14 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { Search, LogIn, User, LogOut } from 'lucide-react';
+import { Search, LogIn, User, LogOut, X } from 'lucide-react';
+
+const MAX_SEARCH_LENGTH = 80;
 
 export const Header = ({
                            isAuthenticated,
                            auth,
-                           onUserDropdownToggle
+                           onUserDropdownToggle,
+                           onSearch,
+                           searchTerm = '',
+                           setSearchTerm
                        }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -28,26 +34,79 @@ export const Header = ({
         onUserDropdownToggle();
     };
 
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (onSearch) {
+            onSearch(searchTerm);
+        }
+    };
+
+    const handleChange = (e) => {
+        const value = e.target.value;
+
+
+        if (value.length <= MAX_SEARCH_LENGTH) {
+            setSearchTerm(value);
+
+
+            if (onSearch) {
+                onSearch(value);
+            }
+        }
+    };
+
+    const clearSearch = () => {
+        setSearchTerm('');
+        if (onSearch) {
+            onSearch('');
+        }
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    };
+
     return (
-        <div className="flex items-center justify-between mb-8">
-            <div className="relative w-96">
-                <input
-                    type="text"
-                    placeholder="Search BlockStore"
-                    className="w-full pl-10 pr-4 py-2 border dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200"
-                />
-                <Search
-                    size={18}
-                    className="absolute top-2.5 left-3 text-gray-400 dark:text-gray-500"
-                />
+        <div className="flex items-center justify-between mb-6 md:mb-8">
+            <div className="relative w-full max-w-md lg:max-w-lg">
+                <form onSubmit={handleSearch}>
+                    <div className="relative">
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Search BlockStore"
+                            className="w-full pl-10 pr-10 py-2 border dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200"
+                            value={searchTerm}
+                            onChange={handleChange}
+                            maxLength={MAX_SEARCH_LENGTH}
+                        />
+                        <Search
+                            size={18}
+                            className="absolute top-2.5 left-3 text-gray-400 dark:text-gray-500"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
+                    </div>
+                    {searchTerm.length === MAX_SEARCH_LENGTH && (
+                        <p className="absolute text-xs text-amber-600 mt-1">
+                            Search limit reached ({MAX_SEARCH_LENGTH} characters)
+                        </p>
+                    )}
+                </form>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
                 {isAuthenticated ? (
                     <>
                         <div className="relative" ref={dropdownRef}>
                             <div
-                                className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
+                                className="w-8 h-8 md:w-10 md:h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
                                 onClick={toggleDropdown}
                             >
                                 {auth.user.profile_photo_path ? (
@@ -95,14 +154,14 @@ export const Header = ({
                     <div className="flex items-center gap-2">
                         <Link
                             href={route('login')}
-                            className="flex items-center gap-1 px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
                         >
-                            <LogIn size={16} />
-                            <span>Sign In</span>
+                            <LogIn size={14} />
+                            <span className="hidden sm:inline">Sign In</span>
                         </Link>
                         <Link
                             href={route('register')}
-                            className="px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
+                            className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200 text-sm"
                         >
                             Register
                         </Link>
