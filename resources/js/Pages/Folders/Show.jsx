@@ -1,11 +1,11 @@
-// resources/js/Pages/Folders/Show.jsx
 import React, { useState, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { FolderIcon, ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
-import Dropdown from '@/Components/Dropdown';
+import axios from 'axios';
 import Sidebar from '@/Pages/Sidebar';
 import Header from '@/Pages/Header';
-
+import UploadModal from '@/Pages/UploadModal';
+import CreateFolderModal from '@/Pages/CreateFolderModal';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -51,9 +51,18 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
     const [selectedFileId, setSelectedFileId] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+    const [processingFolder, setProcessingFolder] = useState(false);
 
+    const fileInputRef = useRef(null);
     const isAuthenticated = auth && auth.user;
 
+    const [data, setData] = useState({
+        file: null,
+    });
+    const [processing, setProcessing] = useState(false);
+    const [errors, setErrors] = useState({});
+    const [progress, setProgress] = useState(null);
 
     const handleMoveFile = (fileId, folderId) => {
         axios.post(route('files.move', fileId), {
@@ -73,6 +82,93 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
         setShowFolderModal(true);
     };
 
+    const handleFileUpload = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = (e) => {
+        if (e.target.files.length > 0) {
+            setData({...data, file: e.target.files[0]});
+        }
+    };
+
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setData({...data, file: e.dataTransfer.files[0]});
+        }
+    };
+
+    const handleSubmit = (e) => {
+        if (e) e.preventDefault();
+
+        if (!data.file) return;
+
+        setProcessing(true);
+
+        const formData = new FormData();
+        formData.append('file', data.file);
+        if (currentFolder) {
+            formData.append('folder_id', currentFolder.id);
+        }
+
+        axios.post(route('files.store'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: progressEvent => {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setProgress(percentCompleted);
+            }
+        })
+            .then(() => {
+                setShowUploadModal(false);
+                setData({file: null});
+                setProcessing(false);
+                window.location.reload();
+            })
+            .catch(error => {
+                setProcessing(false);
+                if (error.response && error.response.data.errors) {
+                    setErrors(error.response.data.errors);
+                }
+            });
+    };
+
+    const handleCreateFolder = (folderData) => {
+        setProcessingFolder(true);
+
+        if (currentFolder) {
+            folderData.parent_id = currentFolder.id;
+        }
+
+        axios.post(route('folders.store'), folderData)
+            .then(() => {
+                setShowFolderModal(false);
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error creating folder:', error);
+            })
+            .finally(() => {
+                setProcessingFolder(false);
+            });
+    };
+
     return (
         <>
             <Head title={currentFolder ? currentFolder.name : 'All Files'} />
@@ -82,7 +178,11 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                 <Sidebar
                     expanded={true}
                     onCreateNew={(type) => {
-
+                        if (type === 'folder') {
+                            setShowFolderModal(true);
+                        } else {
+                            setShowUploadModal(true);
+                        }
                     }}
                 />
 
@@ -92,6 +192,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                     <Header
                         isAuthenticated={isAuthenticated}
                         auth={auth}
+                        onUserDropdownToggle={() => {}}
                     />
 
                     {/* Breadcrumb */}
@@ -103,18 +204,20 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                             {currentFolder ? currentFolder.name : 'All Files'}
                         </h1>
                         <div className="flex items-center space-x-2">
-                            <Link
-                                href="#"
+                            <button
+                                onClick={handleUpload}
                                 className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                                onClick={() => {
-                                    // Handle upload in the context of this folder
-                                }}
                             >
-                                }}
+                                <FilePlus size={16} />
+                                <span>Upload</span>
+                            </button>
+                            <button
+                                onClick={handleNewFolder}
+                                className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                             >
                                 <Plus size={16} />
                                 <span>New Folder</span>
-                            </Link>
+                            </button>
                         </div>
                     </div>
 
@@ -131,12 +234,11 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                                <FolderIcon size={24} style={{ color: folder.color }} />
+                                                <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />
                                             </div>
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    // Handle star toggle
                                                     axios.post(route('folders.toggle-star', folder.id))
                                                         .then(() => window.location.reload());
                                                 }}
@@ -260,6 +362,15 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                                     </div>
                                                 )}
                                             </div>
+
+                                            <Link
+                                                href={route('files.destroy', file.id)}
+                                                method="delete"
+                                                as="button"
+                                                className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                            >
+                                                <Trash2 size={18} />
+                                            </Link>
                                         </div>
                                     </div>
                                 ))}
@@ -272,6 +383,44 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                     </div>
                 </div>
             </div>
+
+            {/* File input for upload */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+            />
+
+            {/* Upload Modal */}
+            <UploadModal
+                isOpen={showUploadModal}
+                onClose={() => {
+                    setShowUploadModal(false);
+                    setData({file: null});
+                }}
+                file={data.file}
+                dragActive={dragActive}
+                handleDrag={handleDrag}
+                handleDrop={handleDrop}
+                handleFileUpload={handleFileUpload}
+                handleFileChange={handleFileChange}
+                handleSubmit={handleSubmit}
+                fileInputRef={fileInputRef}
+                processing={processing}
+                errors={errors}
+                progress={progress}
+                folderId={currentFolder ? currentFolder.id : null}
+            />
+
+            {/* Create Folder Modal */}
+            <CreateFolderModal
+                isOpen={showFolderModal}
+                onClose={() => setShowFolderModal(false)}
+                onSubmit={handleCreateFolder}
+                processing={processingFolder}
+                parentId={currentFolder ? currentFolder.id : null}
+            />
         </>
     );
 }

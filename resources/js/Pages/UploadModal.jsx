@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { X, File, FilePlus } from 'lucide-react';
 
 export const UploadModal = ({
@@ -14,9 +14,23 @@ export const UploadModal = ({
                                 fileInputRef,
                                 processing,
                                 errors,
-                                progress
+                                progress,
+                                folderId
                             }) => {
     if (!isOpen) return null;
+
+    const submitWithFolder = (e) => {
+        e.preventDefault();
+
+        // Custom submit that includes the folder ID
+        const formData = new FormData();
+        formData.append('file', file);
+        if (folderId) {
+            formData.append('folder_id', folderId);
+        }
+
+        handleSubmit(e);
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -30,7 +44,7 @@ export const UploadModal = ({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={submitWithFolder}>
                     <div className="px-6 py-4">
                         <div
                             className={`border-2 border-dashed rounded-lg p-8 text-center ${
@@ -43,13 +57,6 @@ export const UploadModal = ({
                             onDragLeave={handleDrag}
                             onDrop={handleDrop}
                         >
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-
                             {file ? (
                                 <div className="flex flex-col items-center">
                                     <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-3">
@@ -84,6 +91,14 @@ export const UploadModal = ({
                                         style={{ width: `${typeof progress === 'number' ? progress : progress.percentage}%` }}
                                     ></div>
                                 </div>
+                            </div>
+                        )}
+
+                        {folderId && (
+                            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    This file will be uploaded to the current folder.
+                                </p>
                             </div>
                         )}
                     </div>

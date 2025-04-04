@@ -7,7 +7,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const { auth } = usePage().props;
     const [folders, setFolders] = useState([]);
     const [recentFolders, setRecentFolders] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [recentSectionOpen, setRecentSectionOpen] = useState(true);
 
@@ -18,14 +17,10 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 .then(response => {
                     setFolders(response.data.rootFolders);
                     setRecentFolders(response.data.recentFolders);
-                    setLoading(false);
                 })
                 .catch(error => {
                     console.error('Error fetching sidebar data:', error);
-                    setLoading(false);
                 });
-        } else {
-            setLoading(false);
         }
     }, [auth.user]);
 
@@ -49,7 +44,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
             <div className="px-4 py-2">
                 <button
                     className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md w-full"
-                    onClick={onCreateNew}
+                    onClick={() => onCreateNew('file')}
                 >
                     <Plus size={16} />
                     <span>Upload File</span>
@@ -59,7 +54,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
             <div className="mt-2 flex-1 overflow-y-auto">
                 <div className="mb-4">
                     <Link
-                        href={route('home')}
+                        href={route('folders.show')}
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
                         <FolderIcon size={18} className="text-indigo-500" />
@@ -95,22 +90,17 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
                     {folderSectionOpen && (
                         <div className="mt-1">
-                            {folders.length > 0 ? (
-                                folders.map(folder => (
-                                    <Link
-                                        key={folder.id}
-                                        href={route('folders.show', folder.id)}
-                                        className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                                    >
-                                        <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
-                                        <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
-                                    </Link>
-                                ))
-                            ) : (
-                                <div className="px-4 py-2 pl-8 text-gray-500 dark:text-gray-400 text-sm">
-                                    No folders yet
-                                </div>
-                            )}
+                            {folders.map(folder => (
+                                <Link
+                                    key={folder.id}
+                                    href={route('folders.show', folder.id)}
+                                    className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                                >
+                                    <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
+                                    <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
+                                </Link>
+                            ))}
+
                             <button
                                 className="px-4 py-2 pl-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md w-full text-left"
                                 onClick={() => onCreateNew('folder')}
@@ -122,33 +112,34 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     )}
                 </div>
 
-                {/* Recent Folders Section */}
-                {recentFolders.length > 0 && (
-                    <div className="mb-2">
-                        <div
-                            className="px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                            onClick={toggleRecentSection}
-                        >
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">Recent Folders</span>
-                            {recentSectionOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                        </div>
 
-                        {recentSectionOpen && (
-                            <div className="mt-1">
-                                {recentFolders.map(folder => (
-                                    <Link
-                                        key={folder.id}
-                                        href={route('folders.show', folder.id)}
-                                        className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                                    >
-                                        <FolderIcon size={16} style={{ color: folder.color }} />
-                                        <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                {/*/!* Recent Folders Section *!/*/}
+                {/*{recentFolders.length > 0 && (*/}
+                {/*    <div className="mb-2">*/}
+                {/*        <div*/}
+                {/*            className="px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"*/}
+                {/*            onClick={toggleRecentSection}*/}
+                {/*        >*/}
+                {/*            <span className="text-gray-700 dark:text-gray-300 font-medium">Recent Folders</span>*/}
+                {/*            {recentSectionOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}*/}
+                {/*        </div>*/}
+
+                {/*        {recentSectionOpen && (*/}
+                {/*            <div className="mt-1">*/}
+                {/*                {recentFolders.map(folder => (*/}
+                {/*                    <Link*/}
+                {/*                        key={folder.id}*/}
+                {/*                        href={route('folders.show', folder.id)}*/}
+                {/*                        className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"*/}
+                {/*                    >*/}
+                {/*                        <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />*/}
+                {/*                        <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>*/}
+                {/*                    </Link>*/}
+                {/*                ))}*/}
+                {/*            </div>*/}
+                {/*        )}*/}
+                {/*    </div>*/}
+                {/*)}*/}
 
                 {/* Additional links */}
                 <div className="mt-2">
