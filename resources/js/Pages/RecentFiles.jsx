@@ -1,6 +1,8 @@
-import React from 'react';
+// Updated RecentFiles.jsx with move-to-folder functionality
+import React, { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
+import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal } from 'lucide-react';
+import axios from 'axios';
 
 // Reusable function to get file icon
 const getFileIcon = (type) => {
@@ -21,6 +23,35 @@ const getFileIcon = (type) => {
 };
 
 export const RecentFiles = ({ recentFiles }) => {
+    const [folders, setFolders] = useState([]);
+    const [openDropdown, setOpenDropdown] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch folders for the dropdown
+    useEffect(() => {
+        axios.get(route('sidebar.data'))
+            .then(response => {
+                setFolders(response.data.rootFolders);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching folders:', error);
+                setLoading(false);
+            });
+    }, []);
+
+    // Handle moving a file to a folder
+    const handleMoveFile = (fileId, folderId) => {
+        axios.post(route('files.move', fileId), {
+            folder_id: folderId
+        }).then(() => {
+            window.location.reload();
+        }).catch((error) => {
+            console.error('Error moving file:', error);
+        });
+        setOpenDropdown(null);
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
@@ -51,6 +82,11 @@ export const RecentFiles = ({ recentFiles }) => {
                                     {getFileIcon(file.type)}
                                 </div>
                                 <span className="truncate dark:text-white">{file.name}</span>
+                                {file.folder_name && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                                        {file.folder_name}
+                                    </span>
+                                )}
                             </div>
                             <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">
                                 {file.size}
@@ -79,6 +115,53 @@ export const RecentFiles = ({ recentFiles }) => {
                                         className={file.starred ? "text-yellow-400" : ""}
                                     />
                                 </Link>
+
+                                {/* Move to folder dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setOpenDropdown(openDropdown === file.id ? null : file.id)}
+                                        className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                    >
+                                        <MoreHorizontal size={18} />
+                                    </button>
+
+                                    {openDropdown === file.id && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 py-1 border dark:border-gray-700">
+                                            <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
+                                                Move to folder
+                                            </div>
+                                            <button
+                                                onClick={() => handleMoveFile(file.id, null)}
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                            >
+                                                Root folder
+                                            </button>
+                                            {loading ? (
+                                                <div className="px-4 py-2 text-sm text-gray-500">Loading folders...</div>
+                                            ) : (
+                                                folders.map(folder => (
+                                                    <button
+                                                        key={folder.id}
+                                                        onClick={() => handleMoveFile(file.id, folder.id)}
+                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                    >
+                                                        {folder.name}
+                                                    </button>
+                                                ))
+                                            )}
+                                            <div className="border-t dark:border-gray-700"></div>
+                                            <Link
+                                                href={route('files.destroy', file.id)}
+                                                method="delete"
+                                                as="button"
+                                                className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                            >
+                                                Delete
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <Link
                                     href={route('files.destroy', file.id)}
                                     method="delete"

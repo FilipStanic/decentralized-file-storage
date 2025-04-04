@@ -6,6 +6,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Http\Controllers\SidebarController;
+use App\Http\Controllers\FolderController;
 
 
 Route::get('/', function () {
@@ -32,12 +34,29 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
 });
 
-// Profile routes
+Route::middleware('auth')->get('/sidebar-data', SidebarController::class)->name('sidebar.data');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Authentication routes (already provided by Breeze)
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/folders/{id?}', [FolderController::class, 'show'])->name('folders.show');
+    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::put('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::post('/folders/{folder}/toggle-star', [FolderController::class, 'toggleStar'])->name('folders.toggle-star');
+    Route::post('/folders/{folder?}/move-files', [FolderController::class, 'moveFiles'])->name('folders.move-files');
+    Route::post('/folders/{targetFolder?}/move-folders', [FolderController::class, 'moveFolders'])->name('folders.move-folders');
+
+    Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
+});
+
+
+Route::middleware('auth')->get('/sidebar-data', SidebarController::class)->name('sidebar.data');
+
+
 require __DIR__.'/auth.php';

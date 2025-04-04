@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\File;
+use App\Models\Folder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +34,8 @@ class FileController extends Controller
                     'shared' => $file->share_count,
                     'lastModified' => $file->updated_at->diffForHumans(),
                     'starred' => $file->starred,
+                    'folder_id' => $file->folder_id,
+                    'folder_name' => $file->folder ? $file->folder->name : null,
                 ];
             });
 
@@ -52,12 +55,38 @@ class FileController extends Controller
                     'type' => $file->type,
                     'date' => $file->updated_at->diffForHumans(),
                     'starred' => $file->starred,
+                    'folder_id' => $file->folder_id,
+                    'folder_name' => $file->folder ? $file->folder->name : null,
                 ];
             });
 
+        // Get starred folders
+        $starredFolders = $user->folders()
+            ->where('starred', true)
+            ->orderBy('updated_at', 'desc')
+            ->limit(4)
+            ->get()
+            ->map(function ($folder) {
+                return [
+                    'id' => $folder->id,
+                    'name' => $folder->name,
+                    'color' => $folder->color,
+                    'type' => 'folder',
+                    'date' => $folder->updated_at->diffForHumans(),
+                    'starred' => $folder->starred,
+                ];
+            });
+
+        // Merge folders into quick access
+        $quickAccessItems = $quickAccessFiles->merge($starredFolders)
+            ->sortByDesc('starred')
+            ->sortByDesc('date')
+            ->take(4)
+            ->values();
+
         return [
             'recentFiles' => $recentFiles,
-            'quickAccessFiles' => $quickAccessFiles,
+            'quickAccessFiles' => $quickAccessItems,
         ];
     }
 
@@ -68,10 +97,20 @@ class FileController extends Controller
     {
         $request->validate([
             'file' => 'required|file|max:102400', // 100MB max
+            'folder_id' => 'nullable|exists:folders,id',
         ]);
 
         $file = $request->file('file');
         $user = Auth::user();
+
+        // Check folder access if provided
+        if ($request->folder_id) {
+            $folder = Folder::findOrFail($request->folder_id);
+
+            if (Gate::denies('addFiles', $folder)) {
+                abort(403);
+            }
+        }
 
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
 
@@ -100,6 +139,7 @@ class FileController extends Controller
             'path' => $path,
             'size' => $file->getSize(),
             'type' => $type,
+            'folder_id' => $request->folder_id,
             'last_accessed' => now(),
         ]);
 
@@ -123,11 +163,15 @@ class FileController extends Controller
             return response()->json(['error' => 'File not found'], 404);
         }
 
+        // Update last accessed time
+        $file->update(['last_accessed' => now()]);
+
         return response()->file($fullPath, [
             'Content-Disposition' => 'attachment; filename="' . $file->original_name . '"',
             'Content-Type' => $file->mime_type
         ]);
     }
+
     /**
      * Toggle star status for a file
      */
@@ -163,6 +207,9 @@ class FileController extends Controller
         return redirect()->back()->with('success', 'File deleted successfully');
     }
 
+    /**
+     * Rename a file
+     */
     public function rename(Request $request, $id)
     {
         $file = File::findOrFail($id);
@@ -180,5 +227,36 @@ class FileController extends Controller
         ]);
 
         return redirect()->back();
+    }
+
+    /**
+     * Move a file to a folder
+     */
+    public function move(Request $request, $id)
+    {
+        $file = File::findOrFail($id);
+
+        if (Gate::denies('update', $file)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'folder_id' => 'nullable|exists:folders,id',
+        ]);
+
+        // Check folder access if provided
+        if ($request->folder_id) {
+            $folder = Folder::findOrFail($request->folder_id);
+
+            if (Gate::denies('addFiles', $folder)) {
+                abort(403);
+            }
+        }
+
+        $file->update([
+            'folder_id' => $request->folder_id,
+        ]);
+
+        return redirect()->back()->with('success', 'File moved successfully');
     }
 }

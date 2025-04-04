@@ -13,6 +13,7 @@ class File extends Model
 
     protected $fillable = [
         'user_id',
+        'folder_id',
         'name',
         'original_name',
         'mime_type',
@@ -36,6 +37,14 @@ class File extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the folder that contains the file.
+     */
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class);
     }
 
     /**

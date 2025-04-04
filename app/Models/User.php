@@ -46,14 +46,38 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get all files owned by the user.
+     */
     public function files()
     {
         return $this->hasMany(File::class);
     }
 
+    /**
+     * Get all folders owned by the user.
+     */
+    public function folders()
+    {
+        return $this->hasMany(Folder::class);
+    }
+
+    /**
+     * Get all files shared with the user.
+     */
     public function sharedFiles()
     {
         return $this->belongsToMany(File::class, 'file_shares')
+            ->withPivot('permission')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all folders shared with the user.
+     */
+    public function sharedFolders()
+    {
+        return $this->belongsToMany(Folder::class, 'folder_shares')
             ->withPivot('permission')
             ->withTimestamps();
     }
