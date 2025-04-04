@@ -24,14 +24,14 @@ export const HomePage = ({
     const [processingFolder, setProcessingFolder] = useState(false);
     const [currentFolderId, setCurrentFolderId] = useState(null);
 
-    // Search state
+    
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredRecentFiles, setFilteredRecentFiles] = useState(recentFiles);
     const [filteredQuickAccessFiles, setFilteredQuickAccessFiles] = useState(quickAccessFiles);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [uniqueResultsCount, setUniqueResultsCount] = useState(0);
 
-    // Keep track of displayed files to avoid duplicates in UI
+    
     const [displayedFileIds, setDisplayedFileIds] = useState(new Set());
 
     const dropdownRef = useRef(null);
@@ -70,7 +70,7 @@ export const HomePage = ({
         };
     }, [dropdownRef, modalRef, showUploadModal]);
 
-    // Initialize filtered files on component mount
+    
     useEffect(() => {
         setFilteredRecentFiles(recentFiles);
         setFilteredQuickAccessFiles(quickAccessFiles);
@@ -157,13 +157,13 @@ export const HomePage = ({
         }
     };
 
-    // Handle search
+    
     const handleSearch = (term) => {
         setSearchTerm(term);
-        setDisplayedFileIds(new Set()); // Reset displayed file IDs
+        setDisplayedFileIds(new Set()); 
 
         if (!term.trim()) {
-            // If search is cleared, reset to original files
+            
             setFilteredRecentFiles(recentFiles);
             setFilteredQuickAccessFiles(quickAccessFiles);
             setShowSearchResults(false);
@@ -171,16 +171,16 @@ export const HomePage = ({
             return;
         }
 
-        // Set flag to show search results
+        
         setShowSearchResults(true);
 
-        // First, collect all matching files
-        const allMatchingFiles = new Map(); // Use a Map to store unique files by ID
+        
+        const allMatchingFiles = new Map(); 
 
-        // Process recent files
+        
         recentFiles.forEach(file => {
             if (file.name.toLowerCase().includes(term.toLowerCase())) {
-                // Use file.id as the key to ensure uniqueness
+                
                 allMatchingFiles.set(file.id, {
                     ...file,
                     source: 'recent'
@@ -188,10 +188,10 @@ export const HomePage = ({
             }
         });
 
-        // Process quick access files
+        
         quickAccessFiles.forEach(file => {
             if (file.name.toLowerCase().includes(term.toLowerCase())) {
-                // If this file is already in the map, prioritize quick access
+                
                 allMatchingFiles.set(file.id, {
                     ...file,
                     source: allMatchingFiles.has(file.id) ? 'both' : 'quickAccess'
@@ -199,10 +199,10 @@ export const HomePage = ({
             }
         });
 
-        // Convert map values back to arrays for the UI
+        
         const uniqueMatchingFiles = Array.from(allMatchingFiles.values());
 
-        // Split into quick access and recent, ensuring no duplicates
+        
         const quickAccessResults = uniqueMatchingFiles
             .filter(file => file.source === 'quickAccess' || file.source === 'both');
 
@@ -214,13 +214,13 @@ export const HomePage = ({
         setUniqueResultsCount(uniqueMatchingFiles.length);
     };
 
-    // Check if a file should be displayed in the results
+    
     const shouldDisplayFile = (fileId) => {
         if (displayedFileIds.has(fileId)) {
             return false;
         }
 
-        // Mark the file as displayed
+        
         setDisplayedFileIds(prev => new Set([...prev, fileId]));
         return true;
     };

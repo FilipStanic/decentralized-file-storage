@@ -27,10 +27,10 @@ class FolderController extends Controller
                 abort(403);
             }
 
-            // Update last accessed time
+            
             $currentFolder->update(['last_accessed' => now()]);
 
-            // Build breadcrumbs
+            
             $breadcrumbs = $currentFolder->path;
             $breadcrumbs[] = [
                 'id' => $currentFolder->id,
@@ -38,7 +38,7 @@ class FolderController extends Controller
             ];
         }
 
-        // Get child folders
+        
         $folders = $user->folders()
             ->when($id, function ($query) use ($id) {
                 return $query->where('parent_id', $id);
@@ -60,7 +60,7 @@ class FolderController extends Controller
                 ];
             });
 
-        // Get files in the current folder
+        
         $files = $user->files()
             ->when($id, function ($query) use ($id) {
                 return $query->where('folder_id', $id);
@@ -105,7 +105,7 @@ class FolderController extends Controller
             'color' => 'nullable|string|max:7',
         ]);
 
-        // If parent_id is provided, check if user has access to the parent folder
+        
         if ($request->parent_id) {
             $parentFolder = Folder::findOrFail($request->parent_id);
 
@@ -156,12 +156,12 @@ class FolderController extends Controller
             'file_ids.*' => 'exists:files,id',
         ]);
 
-        // If folder is provided, check if user has access to the folder
+        
         if ($folder && Gate::denies('addFiles', $folder)) {
             abort(403);
         }
 
-        // Check if user owns all the files
+        
         $files = File::whereIn('id', $request->file_ids)->get();
 
         foreach ($files as $file) {
@@ -187,12 +187,12 @@ class FolderController extends Controller
             'folder_ids.*' => 'exists:folders,id',
         ]);
 
-        // If target folder is provided, check if user has access to the folder
+        
         if ($targetFolder && Gate::denies('update', $targetFolder)) {
             abort(403);
         }
 
-        // Check if user owns all the folders and they're not the target folder
+        
         $folders = Folder::whereIn('id', $request->folder_ids)->get();
 
         foreach ($folders as $folder) {
@@ -200,7 +200,7 @@ class FolderController extends Controller
                 abort(403);
             }
 
-            // Prevent circular references
+            
             if ($targetFolder && ($folder->id === $targetFolder->id ||
                     $folder->getAllChildren()->contains('id', $targetFolder->id))) {
                 continue;
@@ -238,7 +238,7 @@ class FolderController extends Controller
             abort(403);
         }
 
-        // Delete the folder and all its contents
+        
         $folder->delete();
 
         return redirect()->back()->with('success', 'Folder deleted successfully');

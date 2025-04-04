@@ -19,14 +19,14 @@ return new class extends Migration
             $table->string('mime_type');
             $table->string('extension');
             $table->string('path');
-            $table->bigInteger('size'); // Size in bytes
-            $table->string('type'); // Document, Image, Spreadsheet, etc.
+            $table->bigInteger('size'); 
+            $table->string('type'); 
             $table->boolean('starred')->default(false);
             $table->timestamp('last_accessed')->nullable();
             $table->timestamps();
         });
 
-        // File sharing table
+        
         Schema::create('file_shares', function (Blueprint $table) {
             $table->id();
             $table->foreignId('file_id')->constrained()->onDelete('cascade');

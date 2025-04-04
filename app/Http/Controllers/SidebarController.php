@@ -18,7 +18,7 @@ class SidebarController extends Controller
             ];
         }
 
-        // Get root folders
+        
         $rootFolders = $user->folders()
             ->whereNull('parent_id')
             ->orderBy('name')

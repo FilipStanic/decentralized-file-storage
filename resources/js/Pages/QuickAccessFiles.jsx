@@ -20,7 +20,7 @@ const getFileIcon = (type) => {
 };
 
 export const QuickAccessFiles = ({ quickAccessFiles }) => {
-    // Create a copy and reverse the array to show newest files on the left
+    
     const reversedFiles = [...quickAccessFiles].reverse();
 
     return (

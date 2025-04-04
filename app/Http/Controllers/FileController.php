@@ -60,7 +60,7 @@ class FileController extends Controller
                 ];
             });
 
-        // Get starred folders
+
         $starredFolders = $user->folders()
             ->where('starred', true)
             ->orderBy('updated_at', 'desc')
@@ -77,7 +77,6 @@ class FileController extends Controller
                 ];
             });
 
-        // Merge folders into quick access
         $quickAccessItems = $quickAccessFiles->merge($starredFolders)
             ->sortByDesc('starred')
             ->sortByDesc('date')
@@ -96,14 +95,13 @@ class FileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:102400', // 100MB max
+            'file' => 'required|file|max:102400', 
             'folder_id' => 'nullable|exists:folders,id',
         ]);
 
         $file = $request->file('file');
         $user = Auth::user();
 
-        // Check folder access if provided
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
 
@@ -163,7 +161,7 @@ class FileController extends Controller
             return response()->json(['error' => 'File not found'], 404);
         }
 
-        // Update last accessed time
+        
         $file->update(['last_accessed' => now()]);
 
         return response()->file($fullPath, [
@@ -244,7 +242,7 @@ class FileController extends Controller
             'folder_id' => 'nullable|exists:folders,id',
         ]);
 
-        // Check folder access if provided
+        
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
 

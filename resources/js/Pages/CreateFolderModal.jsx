@@ -6,14 +6,14 @@ const CreateFolderModal = ({ isOpen, onClose, onSubmit, processing, parentId }) 
     const [folderColor, setFolderColor] = useState('#6366F1');
 
     const colors = [
-        '#6366F1', // Indigo
-        '#EF4444', // Red
-        '#F59E0B', // Amber
-        '#10B981', // Emerald
-        '#3B82F6', // Blue
-        '#8B5CF6', // Violet
-        '#EC4899', // Pink
-        '#6B7280', // Gray
+        '#6366F1', 
+        '#EF4444', 
+        '#F59E0B', 
+        '#10B981', 
+        '#3B82F6', 
+        '#8B5CF6', 
+        '#EC4899', 
+        '#6B7280', 
     ];
 
     useEffect(() => {
@@ -46,7 +46,7 @@ const CreateFolderModal = ({ isOpen, onClose, onSubmit, processing, parentId }) 
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>

@@ -22,7 +22,7 @@ export const UploadModal = ({
     const submitWithFolder = (e) => {
         e.preventDefault();
 
-        // Custom submit that includes the folder ID
+        
         const formData = new FormData();
         formData.append('file', file);
         if (folderId) {
