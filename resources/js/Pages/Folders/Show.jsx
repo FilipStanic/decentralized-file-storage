@@ -6,7 +6,7 @@ import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Pages/Sidebar';
 import Header from '@/Pages/Header';
 
-// Helper function to get file icon based on type
+
 const getFileIcon = (type) => {
     switch (type) {
         case 'Image':
@@ -49,10 +49,12 @@ const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
 export default function Show({ auth, currentFolder, breadcrumbs, folders, files }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedFileId, setSelectedFileId] = useState(null);
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showFolderModal, setShowFolderModal] = useState(false);
 
     const isAuthenticated = auth && auth.user;
 
-    // Handle moving a file to a folder
+
     const handleMoveFile = (fileId, folderId) => {
         axios.post(route('files.move', fileId), {
             folder_id: folderId
@@ -61,6 +63,14 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
         }).catch((error) => {
             console.error('Error moving file:', error);
         });
+    };
+
+    const handleUpload = () => {
+        setShowUploadModal(true);
+    };
+
+    const handleNewFolder = () => {
+        setShowFolderModal(true);
     };
 
     return (
@@ -72,8 +82,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                 <Sidebar
                     expanded={true}
                     onCreateNew={(type) => {
-                        // Handle create new based on type
-                        // This would need to be implemented in the parent component
+
                     }}
                 />
 
@@ -101,14 +110,6 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                     // Handle upload in the context of this folder
                                 }}
                             >
-                                <FilePlus size={16} />
-                                <span>Upload</span>
-                            </Link>
-                            <Link
-                                href="#"
-                                className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
-                                onClick={() => {
-                                    // Handle new folder creation (as a subfolder)
                                 }}
                             >
                                 <Plus size={16} />

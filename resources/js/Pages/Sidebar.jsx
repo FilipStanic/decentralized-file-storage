@@ -95,18 +95,14 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
                     {folderSectionOpen && (
                         <div className="mt-1">
-                            {loading ? (
-                                <div className="px-4 py-2 text-gray-500 dark:text-gray-400 text-sm">
-                                    Loading folders...
-                                </div>
-                            ) : folders.length > 0 ? (
+                            {folders.length > 0 ? (
                                 folders.map(folder => (
                                     <Link
                                         key={folder.id}
                                         href={route('folders.show', folder.id)}
                                         className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                                     >
-                                        <FolderIcon size={16} style={{ color: folder.color }} />
+                                        <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
                                         <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
                                     </Link>
                                 ))
@@ -115,7 +111,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                                     No folders yet
                                 </div>
                             )}
-
                             <button
                                 className="px-4 py-2 pl-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md w-full text-left"
                                 onClick={() => onCreateNew('folder')}
