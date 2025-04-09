@@ -3,12 +3,11 @@ import { Link, usePage } from '@inertiajs/react';
 import { Plus, FolderIcon, Clock, Star, Trash2, Archive, Settings, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
 import axios from 'axios';
 
-export const Sidebar = ({ expanded, onCreateNew }) => {
+export const Sidebar = ({ onCreateNew }) => {
     const { auth } = usePage().props;
     const [folders, setFolders] = useState([]);
     const [recentFolders, setRecentFolders] = useState([]);
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
-    const [recentSectionOpen, setRecentSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
@@ -18,23 +17,9 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     setFolders(response.data.rootFolders);
                     setRecentFolders(response.data.recentFolders);
                 })
-                .catch(error => {
-                    console.error('Error fetching sidebar data:', error);
-                });
+                .catch(error => console.error('Error fetching sidebar data:', error));
         }
     }, [auth.user]);
-
-    const toggleFolderSection = () => {
-        setFolderSectionOpen(!folderSectionOpen);
-    };
-
-    const toggleRecentSection = () => {
-        setRecentSectionOpen(!recentSectionOpen);
-    };
-
-    const toggleMobileSidebar = () => {
-        setMobileOpen(!mobileOpen);
-    };
 
     const sidebarContent = (
         <>
@@ -108,7 +93,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 <div className="mb-2">
                     <div
                         className="px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                        onClick={toggleFolderSection}
+                        onClick={() => setFolderSectionOpen(!folderSectionOpen)}
                     >
                         <span className="text-gray-700 dark:text-gray-300 font-medium">Folders</span>
                         {folderSectionOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -121,7 +106,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                                     key={folder.id}
                                     href={route('folders.show', folder.id)}
                                     className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                                    preserveScroll={true}
                                     onClick={() => setMobileOpen(false)}
                                 >
                                     <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
@@ -145,24 +129,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
                 <div className="mt-2">
                     <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                        onClick={() => setMobileOpen(false)}
-                    >
-                        <Trash2 size={18} className="text-gray-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Trash</span>
-                    </Link>
-
-                    <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                        onClick={() => setMobileOpen(false)}
-                    >
-                        <Archive size={18} className="text-gray-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Archive</span>
-                    </Link>
-
-                    <Link
                         href={route('profile.edit')}
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         onClick={() => setMobileOpen(false)}
@@ -178,7 +144,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div className="bg-indigo-600 h-2 rounded-full w-0"></div>
                 </div>
-                <button className="text-indigo-600 dark:text-indigo-400 text-sm mt-2">Upgrade</button>
             </div>
         </>
     );
@@ -187,7 +152,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
         <>
             <div className="fixed top-2.5 left-3 z-40 lg:hidden">
                 <button
-                    onClick={toggleMobileSidebar}
+                    onClick={() => setMobileOpen(!mobileOpen)}
                     className="p-1.5 bg-white dark:bg-gray-800 rounded-md shadow-md"
                 >
                     <Menu size={16} />

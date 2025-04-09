@@ -9,9 +9,7 @@ export const UploadModal = ({
                                 handleDrag,
                                 handleDrop,
                                 handleFileUpload,
-                                handleFileChange,
                                 handleSubmit,
-                                fileInputRef,
                                 processing,
                                 errors,
                                 progress,
@@ -19,24 +17,9 @@ export const UploadModal = ({
                             }) => {
     if (!isOpen) return null;
 
-    const submitWithFolder = (e) => {
-        e.preventDefault();
-
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        if (folderId) {
-            formData.append('folder_id', folderId);
-        }
-
-        handleSubmit(e);
-    };
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
-            >
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
                 <div className="flex justify-between items-center border-b dark:border-gray-700 px-6 py-4">
                     <h3 className="text-lg font-medium dark:text-white">Upload File</h3>
                     <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
@@ -44,7 +27,7 @@ export const UploadModal = ({
                     </button>
                 </div>
 
-                <form onSubmit={submitWithFolder}>
+                <form onSubmit={handleSubmit}>
                     <div className="px-6 py-4">
                         <div
                             className={`border-2 border-dashed rounded-lg p-8 text-center ${
@@ -78,17 +61,17 @@ export const UploadModal = ({
                             )}
                         </div>
 
-                        {errors.file && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.file}</p>}
+                        {errors?.file && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.file}</p>}
 
                         {progress && (
                             <div className="mt-4">
                                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                    Uploading... {typeof progress === 'number' ? progress : progress.percentage}%
+                                    Uploading... {progress}%
                                 </div>
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                     <div
                                         className="bg-indigo-600 h-2 rounded-full"
-                                        style={{ width: `${typeof progress === 'number' ? progress : progress.percentage}%` }}
+                                        style={{ width: `${progress}%` }}
                                     ></div>
                                 </div>
                             </div>
@@ -113,7 +96,7 @@ export const UploadModal = ({
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
                             disabled={!file || processing}
                         >
                             {processing ? 'Uploading...' : 'Upload'}

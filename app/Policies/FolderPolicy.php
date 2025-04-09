@@ -15,7 +15,6 @@ class FolderPolicy
      */
     public function view(User $user, Folder $folder)
     {
-        // Check if the user owns the folder or if it's shared with them
         return $user->id === $folder->user_id ||
             $folder->sharedWith->contains($user->id);
     }
@@ -33,12 +32,12 @@ class FolderPolicy
      */
     public function update(User $user, Folder $folder)
     {
-        // Check if the user owns the folder
+
         if ($user->id === $folder->user_id) {
             return true;
         }
 
-        // Check if the folder is shared with edit permissions
+
         $share = $folder->sharedWith()->where('user_id', $user->id)->first();
         return $share && $share->pivot->permission === 'edit';
     }
@@ -56,7 +55,7 @@ class FolderPolicy
      */
     public function addFiles(User $user, Folder $folder)
     {
-        // Same logic as update
+
         if ($user->id === $folder->user_id) {
             return true;
         }

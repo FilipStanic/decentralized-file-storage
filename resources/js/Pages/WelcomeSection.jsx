@@ -107,16 +107,6 @@ export const WelcomeSection = ({
                         )}
                     </div>
                 )}
-
-                <div className="mt-8 text-sm text-gray-500 dark:text-gray-400">
-                    {!isAuthenticated ? "Already know BlockStore? " : "Need help getting started? "}
-                    <a
-                        href="#"
-                        className="text-indigo-600 hover:text-indigo-800 dark:hover:text-indigo-400"
-                    >
-                        Learn More
-                    </a>
-                </div>
             </div>
         </div>
     );
