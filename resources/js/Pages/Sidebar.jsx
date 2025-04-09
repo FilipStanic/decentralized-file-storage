@@ -10,18 +10,56 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [recentSectionOpen, setRecentSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        if (auth.user) {
-            axios.get(route('sidebar.data'))
-                .then(response => {
-                    setFolders(response.data.rootFolders);
-                    setRecentFolders(response.data.recentFolders);
-                })
-                .catch(error => {
+        let isMounted = true;
+
+        const loadSidebarData = async () => {
+            const cachedData = localStorage.getItem('sidebarData');
+            const cacheTimestamp = localStorage.getItem('sidebarDataTimestamp');
+            const now = new Date().getTime();
+            const cacheIsValid = cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp) < 300000);
+
+            if (cacheIsValid) {
+                try {
+                    const parsedData = JSON.parse(cachedData);
+                    setFolders(parsedData.rootFolders || []);
+                    setRecentFolders(parsedData.recentFolders || []);
+                    return;
+                } catch (e) {
+                    console.error('Error parsing cached sidebar data:', e);
+                }
+            }
+
+            if (!isLoading && auth.user) {
+                setIsLoading(true);
+
+                try {
+                    const response = await axios.get(route('sidebar.data'));
+
+                    if (isMounted) {
+                        setFolders(response.data.rootFolders || []);
+                        setRecentFolders(response.data.recentFolders || []);
+
+                        localStorage.setItem('sidebarData', JSON.stringify(response.data));
+                        localStorage.setItem('sidebarDataTimestamp', now.toString());
+                    }
+                } catch (error) {
                     console.error('Error fetching sidebar data:', error);
-                });
-        }
+                } finally {
+                    if (isMounted) {
+                        setIsLoading(false);
+                    }
+                }
+            }
+        };
+
+        loadSidebarData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [auth.user]);
 
     const toggleFolderSection = () => {
@@ -34,6 +72,27 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
     const toggleMobileSidebar = () => {
         setMobileOpen(!mobileOpen);
+    };
+
+    const forceRefreshSidebarData = () => {
+        localStorage.removeItem('sidebarData');
+        localStorage.removeItem('sidebarDataTimestamp');
+        setIsLoading(true);
+
+        axios.get(route('sidebar.data'))
+            .then(response => {
+                setFolders(response.data.rootFolders || []);
+                setRecentFolders(response.data.recentFolders || []);
+
+                localStorage.setItem('sidebarData', JSON.stringify(response.data));
+                localStorage.setItem('sidebarDataTimestamp', new Date().getTime().toString());
+            })
+            .catch(error => {
+                console.error('Error fetching sidebar data:', error);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     };
 
     const sidebarContent = (

@@ -27,10 +27,10 @@ class FolderController extends Controller
                 abort(403);
             }
 
-            
+
             $currentFolder->update(['last_accessed' => now()]);
 
-            
+
             $breadcrumbs = $currentFolder->path;
             $breadcrumbs[] = [
                 'id' => $currentFolder->id,
@@ -38,7 +38,7 @@ class FolderController extends Controller
             ];
         }
 
-        
+
         $folders = $user->folders()
             ->when($id, function ($query) use ($id) {
                 return $query->where('parent_id', $id);
@@ -60,7 +60,7 @@ class FolderController extends Controller
                 ];
             });
 
-        
+
         $files = $user->files()
             ->when($id, function ($query) use ($id) {
                 return $query->where('folder_id', $id);
@@ -105,7 +105,7 @@ class FolderController extends Controller
             'color' => 'nullable|string|max:7',
         ]);
 
-        
+
         if ($request->parent_id) {
             $parentFolder = Folder::findOrFail($request->parent_id);
 
@@ -156,12 +156,12 @@ class FolderController extends Controller
             'file_ids.*' => 'exists:files,id',
         ]);
 
-        
+
         if ($folder && Gate::denies('addFiles', $folder)) {
             abort(403);
         }
 
-        
+
         $files = File::whereIn('id', $request->file_ids)->get();
 
         foreach ($files as $file) {
@@ -187,12 +187,12 @@ class FolderController extends Controller
             'folder_ids.*' => 'exists:folders,id',
         ]);
 
-        
+
         if ($targetFolder && Gate::denies('update', $targetFolder)) {
             abort(403);
         }
 
-        
+
         $folders = Folder::whereIn('id', $request->folder_ids)->get();
 
         foreach ($folders as $folder) {
@@ -200,7 +200,7 @@ class FolderController extends Controller
                 abort(403);
             }
 
-            
+
             if ($targetFolder && ($folder->id === $targetFolder->id ||
                     $folder->getAllChildren()->contains('id', $targetFolder->id))) {
                 continue;
@@ -238,7 +238,7 @@ class FolderController extends Controller
             abort(403);
         }
 
-        
+
         $folder->delete();
 
         return redirect()->back()->with('success', 'Folder deleted successfully');
