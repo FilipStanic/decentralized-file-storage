@@ -11,7 +11,6 @@ use App\Http\Controllers\FolderController;
 
 
 Route::get('/', function () {
-    // Get file data if the user is authenticated
     $fileData = Auth::check() ? app(FileController::class)->index() : [
         'recentFiles' => [],
         'quickAccessFiles' => [],

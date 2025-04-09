@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
+import { router } from '@inertiajs/react';
 import axios from 'axios';
 
 import Sidebar from './Sidebar';
@@ -185,9 +186,11 @@ export const HomePage = ({ auth, recentFiles = [], quickAccessFiles = [] }) => {
                 isOpen={showFolderModal}
                 onClose={() => setShowFolderModal(false)}
                 onSubmit={(folderData) => {
-                    axios.post(route('folders.store'), folderData)
-                        .then(() => window.location.reload())
-                        .catch(error => console.error('Error creating folder:', error));
+                    router.post(route('folders.store'), folderData, {
+                        preserveScroll: true,
+                        onSuccess: () => setShowFolderModal(false),
+                        onError: (e) => console.error(e),
+                    });
                 }}
                 processing={false}
             />
