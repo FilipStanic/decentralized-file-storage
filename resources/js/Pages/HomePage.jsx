@@ -115,7 +115,9 @@ export const HomePage = ({
         axios.post(route('folders.store'), postData)
             .then(() => {
                 setShowFolderModal(false);
-                router.reload({ only: ['sharedSidebarFolders'] });
+                localStorage.removeItem('sidebarData');
+                localStorage.removeItem('sidebarDataTimestamp');
+                window.location.reload();
             })
             .catch(error => {
                 console.error('Error creating folder:', error);

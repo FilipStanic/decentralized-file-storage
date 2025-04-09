@@ -16,50 +16,87 @@ class FileController extends Controller
     public function index()
     {
         $user = Auth::user();
+        if (!$user) {
+             return ['recentFiles' => [], 'quickAccessFiles' => []];
+        }
 
-        
-        $recentFiles = $user->files()
-            ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
-            ->orderBy('last_accessed', 'desc')
-            ->orderBy('updated_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($file) {
-                return [
-                    'id' => $file->id,
-                    'name' => $file->name,
-                    'type' => $file->type,
-                    'size' => $file->formatted_size,
-                    'shared' => $file->share_count,
-                    'lastModified' => $file->updated_at->diffForHumans(),
-                    'starred' => $file->starred,
-                ];
-            });
+        try {
+            $recentFiles = $user->files()
+                ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
+                ->orderBy('last_accessed', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->map(function ($file) {
+                    return [
+                        'id' => $file->id,
+                        'name' => $file->name,
+                        'type' => $file->type,
+                        'size' => $file->formatted_size,
+                        'shared' => $file->share_count,
+                        'lastModified' => optional($file->updated_at)->diffForHumans(),
+                        'starred' => $file->starred,
+                        'folder_id' => $file->folder_id,
+                        'folder_name' => optional($file->folder)->name,
+                    ];
+                });
 
-        
-        $quickAccessFiles = $user->files()
-            ->where(function($query) {
-                $query->where('starred', true)
-                    ->orWhere('last_accessed', '>=', now()->subDays(7));
-            })
-            ->orderBy('starred', 'desc')
-            ->orderBy('last_accessed', 'desc')
-            ->limit(4)
-            ->get()
-            ->map(function ($file) {
-                return [
-                    'id' => $file->id,
-                    'name' => $file->name,
-                    'type' => $file->type,
-                    'date' => $file->updated_at->diffForHumans(),
-                    'starred' => $file->starred,
-                ];
-            });
+            $quickAccessFiles = $user->files()
+                ->where(function($query) {
+                    $query->where('starred', true)
+                          ->orWhere('last_accessed', '>=', now()->subDays(7));
+                })
+                ->orderBy('starred', 'desc')
+                ->orderBy('last_accessed', 'desc')
+                ->limit(4)
+                ->get()
+                ->map(function ($file) {
+                    return [
+                        'id' => $file->id,
+                        'name' => $file->name,
+                        'type' => $file->type,
+                        'date' => optional($file->updated_at)->diffForHumans(),
+                        'starred' => $file->starred,
+                        'folder_id' => $file->folder_id,
+                        'folder_name' => optional($file->folder)->name,
+                    ];
+                });
 
-        return [
-            'recentFiles' => $recentFiles,
-            'quickAccessFiles' => $quickAccessFiles,
-        ];
+            $starredFolders = $user->folders() // Ensure querying via relationship
+                ->where('starred', true)
+                ->orderBy('updated_at', 'desc')
+                ->limit(4)
+                ->get()
+                ->map(function ($folder) {
+                    return [
+                        'id' => $folder->id,
+                        'name' => $folder->name,
+                        'color' => $folder->color,
+                        'type' => 'folder',
+                        'date' => optional($folder->updated_at)->diffForHumans(),
+                        'starred' => $folder->starred,
+                    ];
+                });
+
+            $quickAccessItems = $quickAccessFiles->merge($starredFolders)
+                ->filter(fn($item) => isset($item['date']) && isset($item['starred'])) // Ensure keys exist before sorting
+                ->sortByDesc('starred')
+                ->sortByDesc('date')
+                ->take(4)
+                ->values();
+
+            return [
+                'recentFiles' => $recentFiles,
+                'quickAccessFiles' => $quickAccessItems,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error in FileController@index', [
+                'message' => $e->getMessage(),
+                'trace_snippet' => $e->getTraceAsString() // Keep logging just in case
+            ]);
+            return ['recentFiles' => [], 'quickAccessFiles' => []];
+        }
     }
 
     public function store(Request $request)
