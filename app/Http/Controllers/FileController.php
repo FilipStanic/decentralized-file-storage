@@ -83,6 +83,7 @@ class FileController extends Controller
             ->take(4)
             ->values();
 
+        \Log::info('FileController@index hit');
         return [
             'recentFiles' => $recentFiles,
             'quickAccessFiles' => $quickAccessItems,

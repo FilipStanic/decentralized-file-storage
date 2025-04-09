@@ -1,98 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Plus, FolderIcon, Clock, Star, Trash2, Archive, Settings, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
-import axios from 'axios';
 
 export const Sidebar = ({ expanded, onCreateNew }) => {
-    const { auth } = usePage().props;
-    const [folders, setFolders] = useState([]);
-    const [recentFolders, setRecentFolders] = useState([]);
+    const { sharedSidebarFolders = [] } = usePage().props;
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
-    const [recentSectionOpen, setRecentSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadSidebarData = async () => {
-            const cachedData = localStorage.getItem('sidebarData');
-            const cacheTimestamp = localStorage.getItem('sidebarDataTimestamp');
-            const now = new Date().getTime();
-            const cacheIsValid = cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp) < 300000);
-
-            if (cacheIsValid) {
-                try {
-                    const parsedData = JSON.parse(cachedData);
-                    setFolders(parsedData.rootFolders || []);
-                    setRecentFolders(parsedData.recentFolders || []);
-                    return;
-                } catch (e) {
-                    console.error('Error parsing cached sidebar data:', e);
-                }
-            }
-
-            if (!isLoading && auth.user) {
-                setIsLoading(true);
-
-                try {
-                    const response = await axios.get(route('sidebar.data'));
-
-                    if (isMounted) {
-                        setFolders(response.data.rootFolders || []);
-                        setRecentFolders(response.data.recentFolders || []);
-
-                        localStorage.setItem('sidebarData', JSON.stringify(response.data));
-                        localStorage.setItem('sidebarDataTimestamp', now.toString());
-                    }
-                } catch (error) {
-                    console.error('Error fetching sidebar data:', error);
-                } finally {
-                    if (isMounted) {
-                        setIsLoading(false);
-                    }
-                }
-            }
-        };
-
-        loadSidebarData();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [auth.user]);
 
     const toggleFolderSection = () => {
         setFolderSectionOpen(!folderSectionOpen);
     };
 
-    const toggleRecentSection = () => {
-        setRecentSectionOpen(!recentSectionOpen);
-    };
-
     const toggleMobileSidebar = () => {
         setMobileOpen(!mobileOpen);
-    };
-
-    const forceRefreshSidebarData = () => {
-        localStorage.removeItem('sidebarData');
-        localStorage.removeItem('sidebarDataTimestamp');
-        setIsLoading(true);
-
-        axios.get(route('sidebar.data'))
-            .then(response => {
-                setFolders(response.data.rootFolders || []);
-                setRecentFolders(response.data.recentFolders || []);
-
-                localStorage.setItem('sidebarData', JSON.stringify(response.data));
-                localStorage.setItem('sidebarDataTimestamp', new Date().getTime().toString());
-            })
-            .catch(error => {
-                console.error('Error fetching sidebar data:', error);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
     };
 
     const sidebarContent = (
@@ -135,7 +55,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                         <FolderIcon size={18} className="text-indigo-500" />
                         <span className="text-gray-800 dark:text-gray-200">All Files</span>
                     </Link>
-
                     <Link
                         href={route('folders.show')}
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -144,7 +63,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                         <FolderIcon size={18} className="text-blue-500" />
                         <span className="text-gray-800 dark:text-gray-200">All Folders</span>
                     </Link>
-
                     <Link
                         href="#"
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -153,7 +71,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                         <Star size={18} className="text-yellow-500" />
                         <span className="text-gray-800 dark:text-gray-200">Starred</span>
                     </Link>
-
                     <Link
                         href="#"
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -175,7 +92,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
                     {folderSectionOpen && (
                         <div className="mt-1">
-                            {folders.map(folder => (
+                            {sharedSidebarFolders.map(folder => (
                                 <Link
                                     key={folder.id}
                                     href={route('folders.show', folder.id)}
@@ -187,7 +104,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                                     <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
                                 </Link>
                             ))}
-
                             <button
                                 className="px-4 py-2 pl-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md w-full text-left"
                                 onClick={() => {
@@ -211,7 +127,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                         <Trash2 size={18} className="text-gray-500" />
                         <span className="text-gray-800 dark:text-gray-200">Trash</span>
                     </Link>
-
                     <Link
                         href="#"
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -220,7 +135,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                         <Archive size={18} className="text-gray-500" />
                         <span className="text-gray-800 dark:text-gray-200">Archive</span>
                     </Link>
-
                     <Link
                         href={route('profile.edit')}
                         className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -252,14 +166,12 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     <Menu size={16} />
                 </button>
             </div>
-
             <div
                 className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-200 ${
                     mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={() => setMobileOpen(false)}
             ></div>
-
             <div
                 className={`fixed top-0 left-0 h-full z-40 lg:static lg:h-screen w-64 lg:w-60 border-r dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800 transform transition-transform duration-200 ease-in-out ${
                     mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'

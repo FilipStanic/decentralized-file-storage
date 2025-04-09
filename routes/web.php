@@ -6,7 +6,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Http\Controllers\SidebarController;
 use App\Http\Controllers\FolderController;
 
 
@@ -17,9 +16,7 @@ Route::get('/', function () {
     ];
 
     return Inertia::render('HomePage', array_merge([
-        'auth' => [
-            'user' => Auth::user(),
-        ],
+        'auth' => ['user' => Auth::user()],
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
     ], $fileData));
@@ -33,7 +30,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
 });
 
-Route::middleware('auth')->get('/sidebar-data', SidebarController::class)->name('sidebar.data');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -54,8 +50,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
 });
 
-
-Route::middleware('auth')->get('/sidebar-data', SidebarController::class)->name('sidebar.data');
 
 
 require __DIR__.'/auth.php';

@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useForm } from "@inertiajs/react";
+import { useForm, router } from "@inertiajs/react";
 import axios from 'axios';
-import { Search } from 'lucide-react';
 
 import Sidebar from './Sidebar';
 import Header from './Header';
-import QuickAccessFiles from './QuickAccessFiles';
-import RecentFiles from './RecentFiles';
 import UploadModal from './UploadModal';
 import WelcomeSection from './WelcomeSection';
 import CreateFolderModal from './CreateFolderModal';
+import AuthenticatedContentView from './AuthenticatedContentView';
 
 export const HomePage = ({
                              auth,
@@ -17,13 +15,11 @@ export const HomePage = ({
                              quickAccessFiles = []
                          }) => {
     const [expanded, setExpanded] = useState(true);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
     const [currentFolderId, setCurrentFolderId] = useState(null);
-
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredRecentFiles, setFilteredRecentFiles] = useState(recentFiles);
@@ -31,90 +27,95 @@ export const HomePage = ({
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [uniqueResultsCount, setUniqueResultsCount] = useState(0);
 
-
-    const [displayedFileIds, setDisplayedFileIds] = useState(new Set());
-
-    const dropdownRef = useRef(null);
-    const modalRef = useRef(null);
     const fileInputRef = useRef(null);
+    const modalRef = useRef(null);
 
     const isAuthenticated = auth && auth.user;
 
-    const {
-        data,
-        setData,
-        post,
-        processing,
-        progress,
-        errors,
-        reset
-    } = useForm({
+    const uploadForm = useForm({
         file: null,
     });
 
     useEffect(() => {
-        function handleClickOutside(event) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
+        if (!searchTerm.trim()) {
+            setFilteredRecentFiles(recentFiles);
+            setFilteredQuickAccessFiles(quickAccessFiles);
+            setShowSearchResults(false);
+            setUniqueResultsCount(0);
+        } else {
+            handleSearch(searchTerm, recentFiles, quickAccessFiles);
+        }
+    }, [recentFiles, quickAccessFiles]);
 
+    useEffect(() => {
+        function handleClickOutside(event) {
             if (modalRef.current && !modalRef.current.contains(event.target) && showUploadModal) {
-                setShowUploadModal(false);
-                reset();
+                closeUploadModal();
             }
         }
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [dropdownRef, modalRef, showUploadModal]);
-
-
-    useEffect(() => {
-        setFilteredRecentFiles(recentFiles);
-        setFilteredQuickAccessFiles(quickAccessFiles);
-    }, [recentFiles, quickAccessFiles]);
+    }, [showUploadModal]);
 
     const handleCreateNew = (type = 'file') => {
         if (type === 'folder') {
             setShowFolderModal(true);
         } else {
+            uploadForm.reset();
             setShowUploadModal(true);
         }
     };
 
+    const closeUploadModal = () => {
+        setShowUploadModal(false);
+        uploadForm.reset();
+    }
+
     const handleFileUpload = () => {
-        fileInputRef.current.click();
+        fileInputRef.current?.click();
     };
 
     const handleFileChange = (e) => {
         if (e.target.files.length > 0) {
-            setData('file', e.target.files[0]);
+            uploadForm.setData('file', e.target.files[0]);
+            setShowUploadModal(true);
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmitUpload = (e) => {
         if (e) e.preventDefault();
+        if (!uploadForm.data.file) return;
+        const formData = { ...uploadForm.data };
+        if (currentFolderId) {
+            formData.folder_id = currentFolderId;
+        }
 
-        if (!data.file) return;
-
-        post(route('files.store'), {
+        uploadForm.post(route('files.store'), {
+            data: formData,
             preserveScroll: true,
             onSuccess: () => {
-                setShowUploadModal(false);
-                reset();
+                closeUploadModal();
+                router.reload({ only: ['recentFiles', 'quickAccessFiles'] });
+            },
+            onError: (errors) => {
+                console.error("Upload errors:", errors);
             },
         });
     };
 
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
+        const postData = { ...folderData };
+        if (currentFolderId) {
+            postData.parent_id = currentFolderId;
+        }
 
-        axios.post(route('folders.store'), folderData)
-            .then(response => {
+        axios.post(route('folders.store'), postData)
+            .then(() => {
                 setShowFolderModal(false);
-                window.location.reload();
+                router.reload({ only: ['sharedSidebarFolders'] });
             })
             .catch(error => {
                 console.error('Error creating folder:', error);
@@ -127,7 +128,6 @@ export const HomePage = ({
     const handleDrag = (e) => {
         e.preventDefault();
         e.stopPropagation();
-
         if (e.type === 'dragenter' || e.type === 'dragover') {
             setDragActive(true);
         } else if (e.type === 'dragleave') {
@@ -139,91 +139,59 @@ export const HomePage = ({
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setData('file', e.dataTransfer.files[0]);
-        }
-    };
-
-    const toggleUserDropdown = () => {
-        setDropdownOpen(prev => !prev);
-    };
-
-    const handleUploadFromWelcome = () => {
-        if (data.file) {
-            handleSubmit();
-        } else {
+            uploadForm.setData('file', e.dataTransfer.files[0]);
             setShowUploadModal(true);
         }
     };
 
-
-    const handleSearch = (term) => {
+    const handleSearch = (term, currentRecent = recentFiles, currentQuick = quickAccessFiles) => {
         setSearchTerm(term);
-        setDisplayedFileIds(new Set());
 
         if (!term.trim()) {
-
-            setFilteredRecentFiles(recentFiles);
-            setFilteredQuickAccessFiles(quickAccessFiles);
+            setFilteredRecentFiles(currentRecent);
+            setFilteredQuickAccessFiles(currentQuick);
             setShowSearchResults(false);
             setUniqueResultsCount(0);
             return;
         }
 
-
         setShowSearchResults(true);
-
-
+        const lowerCaseTerm = term.toLowerCase();
         const allMatchingFiles = new Map();
 
+        currentRecent.forEach(file => {
+            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
+                allMatchingFiles.set(file.id, { ...file, source: 'recent' });
+            }
+        });
 
-        recentFiles.forEach(file => {
-            if (file.name.toLowerCase().includes(term.toLowerCase())) {
-
+        currentQuick.forEach(file => {
+            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
+                const existing = allMatchingFiles.get(file.id);
                 allMatchingFiles.set(file.id, {
                     ...file,
-                    source: 'recent'
+                    source: existing ? 'both' : 'quickAccess'
                 });
             }
         });
 
+        const uniqueMatchingFilesArray = Array.from(allMatchingFiles.values());
+        const filteredQuick = uniqueMatchingFilesArray.filter(f => f.source === 'quickAccess' || f.source === 'both');
+        const filteredRecent = uniqueMatchingFilesArray.filter(f => f.source === 'recent');
 
-        quickAccessFiles.forEach(file => {
-            if (file.name.toLowerCase().includes(term.toLowerCase())) {
-
-                allMatchingFiles.set(file.id, {
-                    ...file,
-                    source: allMatchingFiles.has(file.id) ? 'both' : 'quickAccess'
-                });
-            }
-        });
-
-
-        const uniqueMatchingFiles = Array.from(allMatchingFiles.values());
-
-
-        const quickAccessResults = uniqueMatchingFiles
-            .filter(file => file.source === 'quickAccess' || file.source === 'both');
-
-        const recentResults = uniqueMatchingFiles
-            .filter(file => file.source === 'recent' && !quickAccessResults.some(qaf => qaf.id === file.id));
-
-        setFilteredQuickAccessFiles(quickAccessResults);
-        setFilteredRecentFiles(recentResults);
-        setUniqueResultsCount(uniqueMatchingFiles.length);
+        setFilteredQuickAccessFiles(filteredQuick);
+        setFilteredRecentFiles(filteredRecent);
+        setUniqueResultsCount(uniqueMatchingFilesArray.length);
     };
 
-
-    const shouldDisplayFile = (fileId) => {
-        if (displayedFileIds.has(fileId)) {
-            return false;
+    const handleUploadFromWelcome = () => {
+        if (uploadForm.data.file) {
+            handleSubmitUpload();
+        } else {
+            handleFileUpload();
         }
-
-
-        setDisplayedFileIds(prev => new Set([...prev, fileId]));
-        return true;
-    };
+    }
 
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative">
@@ -231,128 +199,59 @@ export const HomePage = ({
                 expanded={expanded}
                 onCreateNew={handleCreateNew}
             />
-
             <div className="flex-1 p-4 pt-12 lg:pt-4 overflow-auto bg-gray-50 dark:bg-gray-900">
                 <Header
                     isAuthenticated={isAuthenticated}
                     auth={auth}
-                    onUserDropdownToggle={toggleUserDropdown}
+                    onUserDropdownToggle={() => {}}
                     onSearch={handleSearch}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                 />
-
-                {/* Show search status if searching */}
-                {showSearchResults && searchTerm.trim() && (
-                    <div className="mb-4">
-                        <h2 className="text-lg font-medium text-gray-800 dark:text-white">
-                            Search results for "{searchTerm}"
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {uniqueResultsCount} {uniqueResultsCount === 1 ? 'result' : 'results'} found
-                        </p>
-                    </div>
-                )}
-
                 {isAuthenticated ? (
-                    (quickAccessFiles.length === 0 && recentFiles.length === 0) ? (
-                        <WelcomeSection
-                            isAuthenticated={true}
-                            file={data.file}
-                            dragActive={dragActive}
-                            handleDrag={handleDrag}
-                            handleDrop={handleDrop}
-                            handleFileUpload={handleFileUpload}
-                            fileInputRef={fileInputRef}
-                            onUpload={handleUploadFromWelcome}
-                        />
-                    ) : (
-                        <>
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 md:mb-0">
-                                    {showSearchResults ? 'Search Results' : 'My Files'}
-                                </h2>
-                                <div className="flex items-center space-x-2">
-                                    <button
-                                        onClick={() => handleCreateNew('file')}
-                                        className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex-1 md:flex-none"
-                                    >
-                                        <span>Upload</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleCreateNew('folder')}
-                                        className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white text-sm flex-1 md:flex-none"
-                                    >
-                                        <span>New Folder</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Show 'No results found' message when searching with no results */}
-                            {showSearchResults && searchTerm.trim() && uniqueResultsCount === 0 ? (
-                                <div className="text-center py-10 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
-                                    <div className="inline-flex rounded-full bg-gray-100 dark:bg-gray-700 p-4 mb-4">
-                                        <Search size={24} className="text-gray-500 dark:text-gray-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">No results found</h3>
-                                    <p className="mt-2 text-gray-500 dark:text-gray-400">
-                                        We couldn't find any files or folders matching "{searchTerm}".<br />
-                                        Try using different keywords or checking for typos.
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Only show Quick Access section if there are filtered results or not searching */}
-                                    {(filteredQuickAccessFiles.length > 0 || !showSearchResults) && (
-                                        <QuickAccessFiles
-                                            quickAccessFiles={filteredQuickAccessFiles}
-                                        />
-                                    )}
-
-                                    {/* Only show Recent Files section if there are filtered results or not searching */}
-                                    {(filteredRecentFiles.length > 0 || !showSearchResults) && (
-                                        <RecentFiles
-                                            recentFiles={filteredRecentFiles}
-                                        />
-                                    )}
-                                </>
-                            )}
-                        </>
-                    )
-                ) : (
-                    <WelcomeSection
-                        isAuthenticated={false}
+                    <AuthenticatedContentView
+                        quickAccessFiles={filteredQuickAccessFiles}
+                        recentFiles={filteredRecentFiles}
+                        searchTerm={searchTerm}
+                        showSearchResults={showSearchResults}
+                        uniqueResultsCount={uniqueResultsCount}
+                        handleCreateNew={handleCreateNew}
+                        uploadFileData={uploadForm.data.file}
+                        dragActive={dragActive}
+                        handleDrag={handleDrag}
+                        handleDrop={handleDrop}
+                        handleFileUpload={handleFileUpload}
+                        fileInputRef={fileInputRef}
+                        handleUploadFromWelcome={handleUploadFromWelcome}
+                        hasAnyFilesInitially={recentFiles.length > 0 || quickAccessFiles.length > 0}
                     />
+                ) : (
+                    <WelcomeSection isAuthenticated={false} />
                 )}
             </div>
-
             <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
             />
-
             <UploadModal
                 isOpen={showUploadModal}
-                onClose={() => {
-                    setShowUploadModal(false);
-                    reset();
-                }}
-                file={data.file}
+                onClose={closeUploadModal}
+                file={uploadForm.data.file}
                 dragActive={dragActive}
                 handleDrag={handleDrag}
                 handleDrop={handleDrop}
                 handleFileUpload={handleFileUpload}
                 handleFileChange={handleFileChange}
-                handleSubmit={handleSubmit}
+                handleSubmit={handleSubmitUpload}
                 fileInputRef={fileInputRef}
-                processing={processing}
-                errors={errors}
-                progress={progress}
+                processing={uploadForm.processing}
+                errors={uploadForm.errors}
+                progress={uploadForm.progress}
                 folderId={currentFolderId}
+                modalRef={modalRef}
             />
-
             <CreateFolderModal
                 isOpen={showFolderModal}
                 onClose={() => setShowFolderModal(false)}
