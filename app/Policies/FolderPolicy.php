@@ -47,6 +47,7 @@ class FolderPolicy
      */
     public function delete(User $user, Folder $folder)
     {
+
         return $user->id === $folder->user_id;
     }
 
@@ -59,6 +60,7 @@ class FolderPolicy
         if ($user->id === $folder->user_id) {
             return true;
         }
+
 
         $share = $folder->sharedWith()->where('user_id', $user->id)->first();
         return $share && $share->pivot->permission === 'edit';

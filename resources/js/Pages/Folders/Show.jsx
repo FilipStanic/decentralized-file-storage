@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { FolderIcon, ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
+import { ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '@/Pages/Sidebar';
 import Header from '@/Pages/Header';
 import UploadModal from '@/Pages/UploadModal';
 import CreateFolderModal from '@/Pages/CreateFolderModal';
+import FolderItem from '@/Pages/FolderItem';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -200,19 +201,18 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                     }}
                 />
 
-                {/* Main content */}
+
                 <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900">
-                    {/* Header */}
+
                     <Header
                         isAuthenticated={isAuthenticated}
                         auth={auth}
                         onUserDropdownToggle={() => {}}
                     />
 
-                    {/* Breadcrumb */}
+
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
 
-                    {/* Folder title */}
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-xl sm:text-2xl font-semibold dark:text-white">
                             {currentFolder ? currentFolder.name : 'All Files'}
@@ -235,47 +235,17 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                         </div>
                     </div>
 
-                    {/* Folders section */}
                     {folders.length > 0 && (
                         <div className="mb-8">
                             <h2 className="text-lg font-medium mb-4 dark:text-white">Folders</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {folders.map((folder) => (
-                                    <Link
-                                        key={folder.id}
-                                        href={route('folders.show', folder.id)}
-                                        className="p-4 border dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow flex flex-col bg-white dark:bg-gray-800"
-                                    >
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                                <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    axios.post(route('folders.toggle-star', folder.id))
-                                                        .then(() => window.location.reload());
-                                                }}
-                                                className="text-gray-400 hover:text-yellow-400"
-                                            >
-                                                <Star
-                                                    size={18}
-                                                    fill={folder.starred ? "currentColor" : "none"}
-                                                    className={folder.starred ? "text-yellow-400" : ""}
-                                                />
-                                            </button>
-                                        </div>
-                                        <h3 className="font-medium text-gray-900 dark:text-white mb-1 truncate">{folder.name}</h3>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            {folder.item_count} {folder.item_count === 1 ? 'item' : 'items'} • {folder.last_modified}
-                                        </p>
-                                    </Link>
+                                    <FolderItem key={folder.id} folder={folder} />
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Files section */}
                     <div>
                         <h2 className="text-lg font-medium mb-4 dark:text-white">Files</h2>
 
@@ -332,7 +302,6 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                                 />
                                             </Link>
 
-                                            {/* Move to folder dropdown */}
                                             <div className="relative">
                                                 <button
                                                     onClick={() => {
@@ -398,7 +367,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                 </div>
             </div>
 
-            {/* File input for upload */}
+
             <input
                 type="file"
                 ref={fileInputRef}
@@ -406,7 +375,6 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                 className="hidden"
             />
 
-            {/* Upload Modal */}
             <UploadModal
                 isOpen={showUploadModal}
                 onClose={() => {

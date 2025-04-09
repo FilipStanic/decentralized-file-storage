@@ -234,13 +234,30 @@ class FolderController extends Controller
      */
     public function destroy(Folder $folder)
     {
+
         if (Gate::denies('delete', $folder)) {
-            abort(403);
+            abort(403, 'You do not have permission to delete this folder');
+        }
+        $this->deleteFolderContents($folder);
+        $folder->delete();
+        return redirect()->back()->with('success', 'Folder deleted successfully');
+    }
+
+    /**
+     * Recursively delete folder contents (helper method)
+     */
+    private function deleteFolderContents(Folder $folder)
+    {
+
+        foreach ($folder->files as $file) {
+            Storage::disk('private')->delete($file->path);
+            $file->delete();
         }
 
+        foreach ($folder->children as $subfolder) {
+            $this->deleteFolderContents($subfolder);
+            $subfolder->delete();
+        }
 
-        $folder->delete();
-
-        return redirect()->back()->with('success', 'Folder deleted successfully');
     }
 }
