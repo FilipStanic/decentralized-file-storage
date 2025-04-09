@@ -10,13 +10,16 @@ use App\Http\Controllers\FolderController;
 
 
 Route::get('/', function () {
+    
     $fileData = Auth::check() ? app(FileController::class)->index() : [
         'recentFiles' => [],
         'quickAccessFiles' => [],
     ];
 
     return Inertia::render('HomePage', array_merge([
-        'auth' => ['user' => Auth::user()],
+        'auth' => [
+            'user' => Auth::user(),
+        ],
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
     ], $fileData));

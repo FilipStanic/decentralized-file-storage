@@ -215,7 +215,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
 
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-xl sm:text-2xl font-semibold dark:text-white">
-                            {currentFolder ? currentFolder.name : 'All Files'}
+                            {currentFolder ? currentFolder.name : 'Folders'}
                         </h1>
                         <div className="flex items-center space-x-2">
                             <button
@@ -237,7 +237,6 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
 
                     {folders.length > 0 && (
                         <div className="mb-8">
-                            <h2 className="text-lg font-medium mb-4 dark:text-white">Folders</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {folders.map((folder) => (
                                     <FolderItem key={folder.id} folder={folder} />

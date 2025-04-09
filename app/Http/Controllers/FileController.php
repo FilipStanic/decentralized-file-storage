@@ -10,20 +10,19 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
+
 class FileController extends Controller
 {
-    /**
-     * Get files for the homepage (recent and quick access)
-     */
     public function index()
     {
         $user = Auth::user();
 
+        
         $recentFiles = $user->files()
             ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('last_accessed', 'desc')
             ->orderBy('updated_at', 'desc')
-            ->limit(20)
+            ->limit(5)
             ->get()
             ->map(function ($file) {
                 return [
@@ -34,11 +33,10 @@ class FileController extends Controller
                     'shared' => $file->share_count,
                     'lastModified' => $file->updated_at->diffForHumans(),
                     'starred' => $file->starred,
-                    'folder_id' => $file->folder_id,
-                    'folder_name' => $file->folder ? $file->folder->name : null,
                 ];
             });
 
+        
         $quickAccessFiles = $user->files()
             ->where(function($query) {
                 $query->where('starred', true)
@@ -55,48 +53,19 @@ class FileController extends Controller
                     'type' => $file->type,
                     'date' => $file->updated_at->diffForHumans(),
                     'starred' => $file->starred,
-                    'folder_id' => $file->folder_id,
-                    'folder_name' => $file->folder ? $file->folder->name : null,
                 ];
             });
 
-
-        $starredFolders = $user->folders()
-            ->where('starred', true)
-            ->orderBy('updated_at', 'desc')
-            ->limit(4)
-            ->get()
-            ->map(function ($folder) {
-                return [
-                    'id' => $folder->id,
-                    'name' => $folder->name,
-                    'color' => $folder->color,
-                    'type' => 'folder',
-                    'date' => $folder->updated_at->diffForHumans(),
-                    'starred' => $folder->starred,
-                ];
-            });
-
-        $quickAccessItems = $quickAccessFiles->merge($starredFolders)
-            ->sortByDesc('starred')
-            ->sortByDesc('date')
-            ->take(4)
-            ->values();
-
-        \Log::info('FileController@index hit');
         return [
             'recentFiles' => $recentFiles,
-            'quickAccessFiles' => $quickAccessItems,
+            'quickAccessFiles' => $quickAccessFiles,
         ];
     }
 
-    /**
-     * Upload a new file
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:102400', 
+            'file' => 'required|file|max:102400',
             'folder_id' => 'nullable|exists:folders,id',
         ]);
 
@@ -105,30 +74,19 @@ class FileController extends Controller
 
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
-
-            if (Gate::denies('addFiles', $folder)) {
-                abort(403);
-            }
+            if (Gate::denies('addFiles', $folder)) { abort(403); }
         }
 
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-
         $path = $file->storeAs('files/' . $user->id, $filename, 'private');
-
         $mimeType = $file->getMimeType();
         $type = 'Other';
 
-        if (strpos($mimeType, 'image') !== false) {
-            $type = 'Image';
-        } elseif (strpos($mimeType, 'pdf') !== false) {
-            $type = 'PDF';
-        } elseif (strpos($mimeType, 'spreadsheet') !== false || strpos($mimeType, 'excel') !== false) {
-            $type = 'Spreadsheet';
-        } elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) {
-            $type = 'Presentation';
-        } elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) {
-            $type = 'Document';
-        }
+        if (strpos($mimeType, 'image') !== false) { $type = 'Image'; }
+        elseif (strpos($mimeType, 'pdf') !== false) { $type = 'PDF'; }
+        elseif (strpos($mimeType, 'spreadsheet') !== false || strpos($mimeType, 'excel') !== false) { $type = 'Spreadsheet'; }
+        elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) { $type = 'Presentation'; }
+        elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) { $type = 'Document'; }
 
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
@@ -145,24 +103,12 @@ class FileController extends Controller
         return redirect()->back()->with('success', 'File uploaded successfully');
     }
 
-    /**
-     * Download a file
-     */
     public function download($id)
     {
         $file = File::findOrFail($id);
-
-        if (Auth::id() !== $file->user_id) {
-            abort(403);
-        }
-
+        if (Auth::id() !== $file->user_id) { abort(403); }
         $fullPath = storage_path('app/private/' . $file->path);
-
-        if (!file_exists($fullPath)) {
-            return response()->json(['error' => 'File not found'], 404);
-        }
-
-        
+        if (!file_exists($fullPath)) { return response()->json(['error' => 'File not found'], 404); }
         $file->update(['last_accessed' => now()]);
 
         return response()->file($fullPath, [
@@ -171,91 +117,45 @@ class FileController extends Controller
         ]);
     }
 
-    /**
-     * Toggle star status for a file
-     */
     public function toggleStar($id)
     {
         $file = File::findOrFail($id);
-
-        if (Gate::denies('update', $file)) {
-            abort(403);
-        }
-
+        if (Gate::denies('update', $file)) { abort(403); }
         $file->timestamps = false;
         $file->update(['starred' => !$file->starred]);
-
         return redirect()->back();
     }
 
-    /**
-     * Delete a file
-     */
     public function destroy($id)
     {
         $file = File::findOrFail($id);
-
-        if (Gate::denies('delete', $file)) {
-            abort(403);
-        }
-
+        if (Gate::denies('delete', $file)) { abort(403); }
         Storage::disk('private')->delete($file->path);
-
         $file->delete();
-
         return redirect()->back()->with('success', 'File deleted successfully');
     }
 
-    /**
-     * Rename a file
-     */
     public function rename(Request $request, $id)
     {
         $file = File::findOrFail($id);
-
-        if (Gate::denies('update', $file)) {
-            abort(403);
-        }
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $file->update([
-            'name' => $request->name,
-        ]);
-
+        if (Gate::denies('update', $file)) { abort(403); }
+        $request->validate(['name' => 'required|string|max:255']);
+        $file->update(['name' => $request->name]);
         return redirect()->back();
     }
 
-    /**
-     * Move a file to a folder
-     */
     public function move(Request $request, $id)
     {
         $file = File::findOrFail($id);
+        if (Gate::denies('update', $file)) { abort(403); }
+        $request->validate(['folder_id' => 'nullable|exists:folders,id']);
 
-        if (Gate::denies('update', $file)) {
-            abort(403);
-        }
-
-        $request->validate([
-            'folder_id' => 'nullable|exists:folders,id',
-        ]);
-
-        
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
-
-            if (Gate::denies('addFiles', $folder)) {
-                abort(403);
-            }
+            if (Gate::denies('addFiles', $folder)) { abort(403); }
         }
 
-        $file->update([
-            'folder_id' => $request->folder_id,
-        ]);
-
+        $file->update(['folder_id' => $request->folder_id]);
         return redirect()->back()->with('success', 'File moved successfully');
     }
 }
