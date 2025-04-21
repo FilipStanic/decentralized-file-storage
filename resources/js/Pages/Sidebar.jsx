@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Plus, FolderIcon, Clock, Star, Trash2, Archive, Settings, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
+import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
 
 export const Sidebar = ({ expanded, onCreateNew }) => {
     const { sharedSidebarFolders = [] } = usePage().props;
@@ -126,14 +126,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     >
                         <Trash2 size={18} className="text-gray-500" />
                         <span className="text-gray-800 dark:text-gray-200">Trash</span>
-                    </Link>
-                    <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                        onClick={() => setMobileOpen(false)}
-                    >
-                        <Archive size={18} className="text-gray-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Archive</span>
                     </Link>
                     <Link
                         href={route('profile.edit')}

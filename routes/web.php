@@ -7,10 +7,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\SidebarController;
 
 
 Route::get('/', function () {
-    
+
     $fileData = Auth::check() ? app(FileController::class)->index() : [
         'recentFiles' => [],
         'quickAccessFiles' => [],
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::get('/sidebar/data', [SidebarController::class, 'data'])->name('sidebar.data');
 
 
 Route::middleware(['auth'])->group(function () {
