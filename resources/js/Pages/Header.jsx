@@ -1,20 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Search, LogIn, User, LogOut, X } from 'lucide-react';
+import { useSearch } from './SearchContext';
 
 const MAX_SEARCH_LENGTH = 80;
 
 export const Header = ({
                            isAuthenticated,
                            auth,
-                           onUserDropdownToggle,
-                           onSearch,
-                           searchTerm = '',
-                           setSearchTerm
+                           onUserDropdownToggle
                        }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const searchInputRef = useRef(null);
+
+    // Use the global search context
+    const { searchTerm, setSearchTerm, handleSearch, clearSearch } = useSearch();
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -34,32 +35,23 @@ export const Header = ({
         onUserDropdownToggle();
     };
 
-    const handleSearch = (e) => {
+    const handleSearchSubmit = (e) => {
         e.preventDefault();
-        if (onSearch) {
-            onSearch(searchTerm);
-        }
+        handleSearch(searchTerm);
+        // IMPORTANT: No form submission or navigation
     };
 
-    const handleChange = (e) => {
+    const handleSearchChange = (e) => {
         const value = e.target.value;
-
 
         if (value.length <= MAX_SEARCH_LENGTH) {
             setSearchTerm(value);
-
-
-            if (onSearch) {
-                onSearch(value);
-            }
+            handleSearch(value);
         }
     };
 
-    const clearSearch = () => {
-        setSearchTerm('');
-        if (onSearch) {
-            onSearch('');
-        }
+    const handleClearSearch = () => {
+        clearSearch();
         if (searchInputRef.current) {
             searchInputRef.current.focus();
         }
@@ -68,7 +60,7 @@ export const Header = ({
     return (
         <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="relative w-full max-w-md lg:max-w-lg">
-                <form onSubmit={handleSearch}>
+                <form onSubmit={handleSearchSubmit}>
                     <div className="relative">
                         <input
                             ref={searchInputRef}
@@ -76,7 +68,7 @@ export const Header = ({
                             placeholder="Search BlockStore"
                             className="w-full pl-10 pr-10 py-2 border dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200"
                             value={searchTerm}
-                            onChange={handleChange}
+                            onChange={handleSearchChange}
                             maxLength={MAX_SEARCH_LENGTH}
                         />
                         <Search
@@ -86,7 +78,7 @@ export const Header = ({
                         {searchTerm && (
                             <button
                                 type="button"
-                                onClick={clearSearch}
+                                onClick={handleClearSearch}
                                 className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                             >
                                 <X size={18} />

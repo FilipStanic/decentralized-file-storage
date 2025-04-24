@@ -34,6 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
 
+    // Add the starred route
     Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
 });
 

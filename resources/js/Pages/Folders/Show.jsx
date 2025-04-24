@@ -7,6 +7,7 @@ import Header from '@/Pages/Header';
 import UploadModal from '@/Pages/UploadModal';
 import CreateFolderModal from '@/Pages/CreateFolderModal';
 import FolderItem from '@/Pages/FolderItem';
+import { useSearch } from '@/Pages/SearchContext';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -55,6 +56,14 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
 
+    // Use the search context
+    const { searchTerm, isSearching } = useSearch();
+
+    // For filtering folders and files based on search
+    const [filteredFolders, setFilteredFolders] = useState(folders);
+    const [filteredFiles, setFilteredFiles] = useState(files);
+    const [totalResults, setTotalResults] = useState(0);
+
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const isAuthenticated = auth && auth.user;
@@ -78,6 +87,30 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    // Filter content based on search term
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setFilteredFolders(folders);
+            setFilteredFiles(files);
+            setTotalResults(folders.length + files.length);
+            return;
+        }
+
+        const lowerCaseTerm = searchTerm.toLowerCase();
+
+        const matchingFolders = folders.filter(folder =>
+            folder.name.toLowerCase().includes(lowerCaseTerm)
+        );
+
+        const matchingFiles = files.filter(file =>
+            file.name.toLowerCase().includes(lowerCaseTerm)
+        );
+
+        setFilteredFolders(matchingFolders);
+        setFilteredFiles(matchingFiles);
+        setTotalResults(matchingFolders.length + matchingFiles.length);
+    }, [searchTerm, folders, files]);
 
     const handleMoveFile = (fileId, folderId) => {
         axios.post(route('files.move', fileId), {
@@ -201,22 +234,28 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                     }}
                 />
 
-
                 <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900">
-
                     <Header
                         isAuthenticated={isAuthenticated}
                         auth={auth}
                         onUserDropdownToggle={() => {}}
                     />
 
-
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
 
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-xl sm:text-2xl font-semibold dark:text-white">
-                            {currentFolder ? currentFolder.name : 'Folders'}
+                            {isSearching
+                                ? `Search Results in ${currentFolder ? currentFolder.name : 'All Folders'}`
+                                : (currentFolder ? currentFolder.name : 'Folders')}
                         </h1>
+
+                        {isSearching && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mr-4">
+                                Found {totalResults} {totalResults === 1 ? 'result' : 'results'} for "{searchTerm}"
+                            </p>
+                        )}
+
                         <div className="flex items-center space-x-2">
                             <button
                                 onClick={handleUpload}
@@ -235,10 +274,10 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                         </div>
                     </div>
 
-                    {folders.length > 0 && (
+                    {filteredFolders.length > 0 && (
                         <div className="mb-8">
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {folders.map((folder) => (
+                                {filteredFolders.map((folder) => (
                                     <FolderItem key={folder.id} folder={folder} />
                                 ))}
                             </div>
@@ -248,7 +287,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                     <div>
                         <h2 className="text-lg font-medium mb-4 dark:text-white">Files</h2>
 
-                        {files.length > 0 ? (
+                        {filteredFiles.length > 0 ? (
                             <div className="border dark:border-gray-700 rounded-md overflow-hidden bg-white dark:bg-gray-800">
                                 <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                                     <div className="col-span-5 md:col-span-6 flex items-center gap-2">
@@ -265,7 +304,7 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                                     </div>
                                 </div>
 
-                                {files.map((file) => (
+                                {filteredFiles.map((file) => (
                                     <div key={file.id} className="grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm">
                                         <div className="col-span-5 md:col-span-6 flex items-center gap-2">
                                             <div className="flex-shrink-0">
@@ -359,13 +398,16 @@ export default function Show({ auth, currentFolder, breadcrumbs, folders, files 
                             </div>
                         ) : (
                             <div className="text-center py-8 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
-                                <p className="text-gray-500 dark:text-gray-400">No files in this folder. Upload files to see them here.</p>
+                                {isSearching ? (
+                                    <p className="text-gray-500 dark:text-gray-400">No files matching "{searchTerm}" in this folder.</p>
+                                ) : (
+                                    <p className="text-gray-500 dark:text-gray-400">No files in this folder. Upload files to see them here.</p>
+                                )}
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-
 
             <input
                 type="file"

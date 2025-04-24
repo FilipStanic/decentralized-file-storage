@@ -25,9 +25,7 @@ export function AuthenticatedContentView({
     const isSearching = showSearchResults && searchTerm.trim();
     const noSearchResults = isSearching && uniqueResultsCount === 0;
 
-
     const showEmptyStateWelcome = !isSearching && !hasAnyFilesInitially;
-
 
     if (showEmptyStateWelcome) {
         return (
@@ -46,7 +44,6 @@ export function AuthenticatedContentView({
 
     return (
         <>
-
             {isSearching && (
                 <div className="mb-4">
                     <h2 className="text-lg font-medium text-gray-800 dark:text-white">
@@ -78,7 +75,6 @@ export function AuthenticatedContentView({
                 </div>
             ) : (
                 <>
-
                     {(quickAccessFiles.length > 0 || !isSearching) && (
                         <QuickAccessFiles quickAccessFiles={quickAccessFiles} />
                     )}

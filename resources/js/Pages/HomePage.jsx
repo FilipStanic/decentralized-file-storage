@@ -8,6 +8,7 @@ import UploadModal from './UploadModal';
 import WelcomeSection from './WelcomeSection';
 import CreateFolderModal from './CreateFolderModal';
 import AuthenticatedContentView from './AuthenticatedContentView';
+import { useSearch } from './SearchContext';
 
 export const HomePage = ({
                              auth,
@@ -21,10 +22,8 @@ export const HomePage = ({
     const [processingFolder, setProcessingFolder] = useState(false);
     const [currentFolderId, setCurrentFolderId] = useState(null);
 
-    const [searchTerm, setSearchTerm] = useState('');
     const [filteredRecentFiles, setFilteredRecentFiles] = useState(recentFiles);
     const [filteredQuickAccessFiles, setFilteredQuickAccessFiles] = useState(quickAccessFiles);
-    const [showSearchResults, setShowSearchResults] = useState(false);
     const [uniqueResultsCount, setUniqueResultsCount] = useState(0);
 
     const fileInputRef = useRef(null);
@@ -32,20 +31,25 @@ export const HomePage = ({
 
     const isAuthenticated = auth && auth.user;
 
+    // Use the search context
+    const { searchTerm, isSearching, setSearchTerm } = useSearch();
+
     const uploadForm = useForm({
         file: null,
     });
+
+    // We no longer need to initialize search from URL params
+    // The search state is now managed by the SearchContext component
 
     useEffect(() => {
         if (!searchTerm.trim()) {
             setFilteredRecentFiles(recentFiles);
             setFilteredQuickAccessFiles(quickAccessFiles);
-            setShowSearchResults(false);
             setUniqueResultsCount(0);
         } else {
-            handleSearch(searchTerm, recentFiles, quickAccessFiles);
+            performSearch(searchTerm, recentFiles, quickAccessFiles);
         }
-    }, [recentFiles, quickAccessFiles]);
+    }, [recentFiles, quickAccessFiles, searchTerm]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -58,6 +62,42 @@ export const HomePage = ({
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [showUploadModal]);
+
+    const performSearch = (term, currentRecent = recentFiles, currentQuick = quickAccessFiles) => {
+        if (!term.trim()) {
+            setFilteredRecentFiles(currentRecent);
+            setFilteredQuickAccessFiles(currentQuick);
+            setUniqueResultsCount(0);
+            return;
+        }
+
+        const lowerCaseTerm = term.toLowerCase();
+        const allMatchingFiles = new Map();
+
+        currentRecent.forEach(file => {
+            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
+                allMatchingFiles.set(file.id, { ...file, source: 'recent' });
+            }
+        });
+
+        currentQuick.forEach(file => {
+            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
+                const existing = allMatchingFiles.get(file.id);
+                allMatchingFiles.set(file.id, {
+                    ...file,
+                    source: existing ? 'both' : 'quickAccess'
+                });
+            }
+        });
+
+        const uniqueMatchingFilesArray = Array.from(allMatchingFiles.values());
+        const filteredQuick = uniqueMatchingFilesArray.filter(f => f.source === 'quickAccess' || f.source === 'both');
+        const filteredRecent = uniqueMatchingFilesArray.filter(f => f.source === 'recent');
+
+        setFilteredQuickAccessFiles(filteredQuick);
+        setFilteredRecentFiles(filteredRecent);
+        setUniqueResultsCount(uniqueMatchingFilesArray.length);
+    };
 
     const handleCreateNew = (type = 'file') => {
         if (type === 'folder') {
@@ -147,46 +187,6 @@ export const HomePage = ({
         }
     };
 
-    const handleSearch = (term, currentRecent = recentFiles, currentQuick = quickAccessFiles) => {
-        setSearchTerm(term);
-
-        if (!term.trim()) {
-            setFilteredRecentFiles(currentRecent);
-            setFilteredQuickAccessFiles(currentQuick);
-            setShowSearchResults(false);
-            setUniqueResultsCount(0);
-            return;
-        }
-
-        setShowSearchResults(true);
-        const lowerCaseTerm = term.toLowerCase();
-        const allMatchingFiles = new Map();
-
-        currentRecent.forEach(file => {
-            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
-                allMatchingFiles.set(file.id, { ...file, source: 'recent' });
-            }
-        });
-
-        currentQuick.forEach(file => {
-            if (file.name.toLowerCase().includes(lowerCaseTerm)) {
-                const existing = allMatchingFiles.get(file.id);
-                allMatchingFiles.set(file.id, {
-                    ...file,
-                    source: existing ? 'both' : 'quickAccess'
-                });
-            }
-        });
-
-        const uniqueMatchingFilesArray = Array.from(allMatchingFiles.values());
-        const filteredQuick = uniqueMatchingFilesArray.filter(f => f.source === 'quickAccess' || f.source === 'both');
-        const filteredRecent = uniqueMatchingFilesArray.filter(f => f.source === 'recent');
-
-        setFilteredQuickAccessFiles(filteredQuick);
-        setFilteredRecentFiles(filteredRecent);
-        setUniqueResultsCount(uniqueMatchingFilesArray.length);
-    };
-
     const handleUploadFromWelcome = () => {
         if (uploadForm.data.file) {
             handleSubmitUpload();
@@ -206,16 +206,13 @@ export const HomePage = ({
                     isAuthenticated={isAuthenticated}
                     auth={auth}
                     onUserDropdownToggle={() => {}}
-                    onSearch={handleSearch}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
                 />
                 {isAuthenticated ? (
                     <AuthenticatedContentView
                         quickAccessFiles={filteredQuickAccessFiles}
                         recentFiles={filteredRecentFiles}
                         searchTerm={searchTerm}
-                        showSearchResults={showSearchResults}
+                        showSearchResults={isSearching}
                         uniqueResultsCount={uniqueResultsCount}
                         handleCreateNew={handleCreateNew}
                         uploadFileData={uploadForm.data.file}
