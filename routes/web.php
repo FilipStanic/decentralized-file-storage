@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StarredController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/files/{file}/toggle-star', [FileController::class, 'toggleStar'])->name('files.toggle-star');
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
+
+    Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
 });
 
 

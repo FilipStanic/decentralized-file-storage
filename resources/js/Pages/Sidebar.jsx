@@ -7,6 +7,11 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    // Determine if the current route matches
+    const isCurrentRoute = (routeName) => {
+        return route().current(routeName);
+    };
+
     const toggleFolderSection = () => {
         setFolderSectionOpen(!folderSectionOpen);
     };
@@ -49,35 +54,39 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 <div className="mb-4">
                     <Link
                         href={route('home')}
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('home')
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
                         onClick={() => setMobileOpen(false)}
                     >
                         <FolderIcon size={18} className="text-indigo-500" />
-                        <span className="text-gray-800 dark:text-gray-200">All Files</span>
+                        <span>All Files</span>
                     </Link>
                     <Link
                         href={route('folders.show')}
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('folders.show') && !route().params.id
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
                         onClick={() => setMobileOpen(false)}
                     >
                         <FolderIcon size={18} className="text-blue-500" />
-                        <span className="text-gray-800 dark:text-gray-200">All Folders</span>
+                        <span>All Folders</span>
                     </Link>
                     <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        href={route('starred.index')}
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('starred.index')
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
                         onClick={() => setMobileOpen(false)}
                     >
                         <Star size={18} className="text-yellow-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Starred</span>
-                    </Link>
-                    <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                        onClick={() => setMobileOpen(false)}
-                    >
-                        <Clock size={18} className="text-green-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Recent</span>
+                        <span>Starred</span>
                     </Link>
                 </div>
 
@@ -96,12 +105,16 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                                 <Link
                                     key={folder.id}
                                     href={route('folders.show', folder.id)}
-                                    className="px-4 py-2 pl-8 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                                    className={`px-4 py-2 pl-8 flex items-center gap-2 rounded-md ${
+                                        isCurrentRoute('folders.show') && route().params.id == folder.id
+                                            ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                    }`}
                                     preserveScroll={true}
                                     onClick={() => setMobileOpen(false)}
                                 >
                                     <FolderIcon size={16} style={{ color: folder.color || '#6366F1' }} />
-                                    <span className="text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
+                                    <span className="truncate">{folder.name}</span>
                                 </Link>
                             ))}
                             <button
@@ -129,11 +142,15 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     </Link>
                     <Link
                         href={route('profile.edit')}
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('profile.edit')
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
                         onClick={() => setMobileOpen(false)}
                     >
                         <Settings size={18} className="text-gray-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Settings</span>
+                        <span>Settings</span>
                     </Link>
                 </div>
             </div>
