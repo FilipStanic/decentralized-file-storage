@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Sidebar from '@/Pages/Sidebar';
-import Header from '@/Pages/Header';
-import StarredItems from '@/Pages/StarredItems';
-import { useSearch } from '@/Pages/SearchContext';
+import Sidebar from '@/Pages/Shared/Sidebar.jsx';
+import Header from '@/Pages/Shared/Header.jsx';
+import StarredItems from '@/Pages/Starred/StarredItems.jsx';
+import { useSearch } from '@/Pages/Shared/SearchContext.jsx';
 
 export default function Index({ auth, starredFiles, starredFolders }) {
     const isAuthenticated = auth && auth.user;

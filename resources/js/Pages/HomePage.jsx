@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { useForm, router } from "@inertiajs/react";
 import axios from 'axios';
 
-import Sidebar from './Sidebar';
-import Header from './Header';
+import Sidebar from './Shared/Sidebar.jsx';
+import Header from './Shared/Header.jsx';
 import UploadModal from './UploadModal';
 import WelcomeSection from './WelcomeSection';
-import CreateFolderModal from './CreateFolderModal';
+import CreateFolderModal from './Folders/CreateFolderModal.jsx';
 import AuthenticatedContentView from './AuthenticatedContentView';
-import { useSearch } from './SearchContext';
+import { useSearch } from './Shared/SearchContext.jsx';
 
 export const HomePage = ({
                              auth,

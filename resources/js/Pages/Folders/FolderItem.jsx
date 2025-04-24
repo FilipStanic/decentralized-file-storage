@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { FolderIcon, Star, Trash2 } from 'lucide-react';
-import DeleteFolderModal from './DeleteFolderModal';
+import DeleteFolderModal from './DeleteFolderModal.jsx';
 
 const FolderItem = ({ folder }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);

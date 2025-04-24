@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
 import axios from 'axios';
-import Sidebar from '@/Pages/Sidebar';
-import Header from '@/Pages/Header';
+import Sidebar from '@/Pages/Shared/Sidebar.jsx';
+import Header from '@/Pages/Shared/Header.jsx';
 import UploadModal from '@/Pages/UploadModal';
-import CreateFolderModal from '@/Pages/CreateFolderModal';
-import FolderItem from '@/Pages/FolderItem';
-import { useSearch } from '@/Pages/SearchContext';
+import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
+import FolderItem from '@/Pages/Folders/FolderItem.jsx';
+import { useSearch } from '@/Pages/Shared/SearchContext.jsx';
 
 const getFileIcon = (type) => {
     switch (type) {
