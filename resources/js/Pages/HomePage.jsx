@@ -8,7 +8,7 @@ import UploadModal from './UploadModal';
 import WelcomeSection from './WelcomeSection';
 import CreateFolderModal from './Folders/CreateFolderModal.jsx';
 import AuthenticatedContentView from './AuthenticatedContentView';
-import { useSearch } from './Shared/SearchContext.jsx';
+import { useSearch } from './Context/SearchContext.jsx';
 
 export const HomePage = ({
                              auth,
@@ -31,15 +31,15 @@ export const HomePage = ({
 
     const isAuthenticated = auth && auth.user;
 
-    // Use the search context
+    
     const { searchTerm, isSearching, setSearchTerm } = useSearch();
 
     const uploadForm = useForm({
         file: null,
     });
 
-    // We no longer need to initialize search from URL params
-    // The search state is now managed by the SearchContext component
+    
+
 
     useEffect(() => {
         if (!searchTerm.trim()) {

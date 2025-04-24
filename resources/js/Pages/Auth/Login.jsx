@@ -22,7 +22,6 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <div className="flex min-h-screen bg-gray-50">
-            {/* Left side with logo */}
             <div className="hidden md:flex md:w-1/2 bg-indigo-600 flex-col justify-center items-center text-white p-12">
                 <Link href={route('home')} className="mb-6 transition-transform hover:scale-105">
                     <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center">
@@ -35,7 +34,6 @@ export default function Login({ status, canResetPassword }) {
                 </p>
             </div>
 
-            {/* Right side with form */}
             <div className="w-full md:w-1/2 flex items-center justify-center p-6">
                 <div className="w-full max-w-md">
                     <div className="text-center mb-10">

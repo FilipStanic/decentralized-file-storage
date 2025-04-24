@@ -29,8 +29,6 @@ const FolderItem = ({ folder }) => {
                                 className={folder.starred ? "text-yellow-400" : ""}
                             />
                         </button>
-
-                        {/* Delete Button */}
                         <button
                             onClick={() => setShowDeleteModal(true)}
                             className="text-gray-400 hover:text-red-600 p-1"
@@ -47,7 +45,6 @@ const FolderItem = ({ folder }) => {
                 </Link>
             </div>
 
-            {/* Delete Confirmation Modal */}
             <DeleteFolderModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}

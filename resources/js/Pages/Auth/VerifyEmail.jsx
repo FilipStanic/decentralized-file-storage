@@ -11,7 +11,6 @@ export default function VerifyEmail({ status }) {
 
     return (
         <div className="flex min-h-screen bg-gray-50">
-            {/* Left side with logo */}
             <div className="hidden md:flex md:w-1/2 bg-indigo-600 flex-col justify-center items-center text-white p-12">
                 <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mb-6">
                     <span className="text-white text-2xl font-bold">B</span>
@@ -22,7 +21,6 @@ export default function VerifyEmail({ status }) {
                 </p>
             </div>
 
-            {/* Right side with form */}
             <div className="w-full md:w-1/2 flex items-center justify-center p-6">
                 <div className="w-full max-w-md">
                     <div className="text-center mb-10">

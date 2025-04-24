@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
 import StarredItems from '@/Pages/Starred/StarredItems.jsx';
-import { useSearch } from '@/Pages/Shared/SearchContext.jsx';
+import { useSearch } from '@/Pages/Context/SearchContext.jsx';
 
 export default function Index({ auth, starredFiles, starredFolders }) {
     const isAuthenticated = auth && auth.user;

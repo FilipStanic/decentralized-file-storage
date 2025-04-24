@@ -83,7 +83,7 @@ class FolderController extends Controller
                 ];
             });
 
-        return Inertia::render('Folders/Show', [
+        return Inertia::render('Folders/FolderView', [
             'currentFolder' => $currentFolder ? [
                 'id' => $currentFolder->id,
                 'name' => $currentFolder->name,

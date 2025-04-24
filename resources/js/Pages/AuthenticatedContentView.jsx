@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-import QuickAccessFiles from './QuickAccessFiles';
+import QuickAccessFiles from './Files/QuickAccessFiles.jsx';
 import RecentFiles from './Files/RecentFiles.jsx';
 import WelcomeSection from './WelcomeSection';
 import HomePageHeaderActions from './HomePageHeaderActions';

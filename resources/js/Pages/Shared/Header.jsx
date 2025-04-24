@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Search, LogIn, User, LogOut, X } from 'lucide-react';
-import { useSearch } from './SearchContext.jsx';
+import { useSearch } from '../Context/SearchContext.jsx';
 
 const MAX_SEARCH_LENGTH = 80;
 

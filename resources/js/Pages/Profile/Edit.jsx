@@ -10,7 +10,6 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
             <Head title="Profile" />
 
             <div className="min-h-screen bg-gray-50">
-                {/* Header */}
                 <header className="bg-white shadow-sm">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-16">
@@ -28,7 +27,6 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                     </div>
                 </header>
 
-                {/* Main content */}
                 <div className="py-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h1 className="text-2xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
