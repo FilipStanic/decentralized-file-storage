@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Search, LogIn, User, LogOut, X } from 'lucide-react';
 import { useSearch } from '../Context/SearchContext.jsx';
+import DarkModeToggle from '../Context/DarkModeToggle.jsx';
 
 const MAX_SEARCH_LENGTH = 80;
 
@@ -94,6 +95,9 @@ export const Header = ({
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
+                {/* Dark Mode Toggle */}
+                <DarkModeToggle />
+
                 {isAuthenticated ? (
                     <>
                         <div className="relative" ref={dropdownRef}>

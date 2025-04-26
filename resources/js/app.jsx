@@ -4,6 +4,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { SearchProvider } from './Pages/Context/SearchContext.jsx';
+import { ThemeProvider } from './Pages/Context/ThemeContext.jsx';
 
 const appName = import.meta.env.VITE_APP_NAME || 'BlockStore';
 
@@ -32,9 +33,11 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <SearchProvider>
-                <App {...props} />
-            </SearchProvider>
+            <ThemeProvider>
+                <SearchProvider>
+                    <App {...props} />
+                </SearchProvider>
+            </ThemeProvider>
         );
     },
     progress: {
