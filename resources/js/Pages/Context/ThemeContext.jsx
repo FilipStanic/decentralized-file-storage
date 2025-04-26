@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Create a context for theme management
 const ThemeContext = createContext();
 
 export const useTheme = () => {
@@ -14,7 +13,7 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
     const [darkMode, setDarkMode] = useState(false);
 
-    // Initialize dark mode from localStorage on first render
+
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -23,7 +22,6 @@ export const ThemeProvider = ({ children }) => {
         }
     }, []);
 
-    // Function to toggle dark mode
     const toggleDarkMode = () => {
         setDarkMode(prevMode => {
             const newMode = !prevMode;

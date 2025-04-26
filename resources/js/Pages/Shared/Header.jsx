@@ -14,8 +14,6 @@ export const Header = ({
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const searchInputRef = useRef(null);
-
-    // Use the global search context
     const { searchTerm, setSearchTerm, handleSearch, clearSearch } = useSearch();
 
     useEffect(() => {
@@ -39,7 +37,6 @@ export const Header = ({
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         handleSearch(searchTerm);
-        // IMPORTANT: No form submission or navigation
     };
 
     const handleSearchChange = (e) => {
@@ -95,7 +92,6 @@ export const Header = ({
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-                {/* Dark Mode Toggle */}
                 <DarkModeToggle />
 
                 {isAuthenticated ? (
