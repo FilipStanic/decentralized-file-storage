@@ -4,20 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\Folder;
+use App\Services\PinataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-
 
 class FileController extends Controller
 {
+    protected $pinataService;
+
+    public function __construct(PinataService $pinataService)
+    {
+        $this->pinataService = $pinataService;
+    }
+
     public function index()
     {
         $user = Auth::user();
         if (!$user) {
-             return ['recentFiles' => [], 'quickAccessFiles' => []];
+            return ['recentFiles' => [], 'quickAccessFiles' => []];
         }
 
         try {
@@ -38,13 +46,15 @@ class FileController extends Controller
                         'starred' => $file->starred,
                         'folder_id' => $file->folder_id,
                         'folder_name' => optional($file->folder)->name,
+                        'ipfs_hash' => $file->ipfs_hash,
+                        'ipfs_url' => $file->ipfs_hash ? "https://gateway.pinata.cloud/ipfs/{$file->ipfs_hash}" : null,
                     ];
                 });
 
             $quickAccessFiles = $user->files()
                 ->where(function($query) {
                     $query->where('starred', true)
-                          ->orWhere('last_accessed', '>=', now()->subDays(7));
+                        ->orWhere('last_accessed', '>=', now()->subDays(7));
                 })
                 ->orderBy('starred', 'desc')
                 ->orderBy('last_accessed', 'desc')
@@ -59,10 +69,12 @@ class FileController extends Controller
                         'starred' => $file->starred,
                         'folder_id' => $file->folder_id,
                         'folder_name' => optional($file->folder)->name,
+                        'ipfs_hash' => $file->ipfs_hash,
+                        'ipfs_url' => $file->ipfs_hash ? "https://gateway.pinata.cloud/ipfs/{$file->ipfs_hash}" : null,
                     ];
                 });
 
-            $starredFolders = $user->folders() // Ensure querying via relationship
+            $starredFolders = $user->folders()
                 ->where('starred', true)
                 ->orderBy('updated_at', 'desc')
                 ->limit(4)
@@ -79,7 +91,7 @@ class FileController extends Controller
                 });
 
             $quickAccessItems = $quickAccessFiles->merge($starredFolders)
-                ->filter(fn($item) => isset($item['date']) && isset($item['starred'])) // Ensure keys exist before sorting
+                ->filter(fn($item) => isset($item['date']) && isset($item['starred']))
                 ->sortByDesc('starred')
                 ->sortByDesc('date')
                 ->take(4)
@@ -93,7 +105,7 @@ class FileController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in FileController@index', [
                 'message' => $e->getMessage(),
-                'trace_snippet' => $e->getTraceAsString() // Keep logging just in case
+                'trace_snippet' => $e->getTraceAsString()
             ]);
             return ['recentFiles' => [], 'quickAccessFiles' => []];
         }
@@ -125,6 +137,17 @@ class FileController extends Controller
         elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) { $type = 'Presentation'; }
         elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) { $type = 'Document'; }
 
+        // Upload file to IPFS via Pinata
+        $pinataResult = $this->pinataService->uploadFile($file);
+
+        $ipfsHash = null;
+        $ipfsUrl = null;
+
+        if ($pinataResult && isset($pinataResult['IpfsHash'])) {
+            $ipfsHash = $pinataResult['IpfsHash'];
+            $ipfsUrl = $this->pinataService->getGatewayUrl($ipfsHash);
+        }
+
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
             'original_name' => $file->getClientOriginalName(),
@@ -135,15 +158,24 @@ class FileController extends Controller
             'type' => $type,
             'folder_id' => $request->folder_id,
             'last_accessed' => now(),
+            'ipfs_hash' => $ipfsHash,
+            'ipfs_url' => $ipfsUrl,
         ]);
 
-        return redirect()->back()->with('success', 'File uploaded successfully');
+        return redirect()->back()->with('success', 'File uploaded successfully to local storage and IPFS');
     }
 
     public function download($id)
     {
         $file = File::findOrFail($id);
         if (Auth::id() !== $file->user_id) { abort(403); }
+
+        if ($file->ipfs_hash && $file->ipfs_url) {
+            // Redirect to IPFS gateway URL
+            return redirect($file->ipfs_url);
+        }
+
+        // Fall back to local file if IPFS is not available
         $fullPath = storage_path('app/private/' . $file->path);
         if (!file_exists($fullPath)) { return response()->json(['error' => 'File not found'], 404); }
         $file->update(['last_accessed' => now()]);
@@ -167,6 +199,12 @@ class FileController extends Controller
     {
         $file = File::findOrFail($id);
         if (Gate::denies('delete', $file)) { abort(403); }
+
+        // Delete from IPFS/Pinata if hash exists
+        if ($file->ipfs_hash) {
+            $this->pinataService->unpin($file->ipfs_hash);
+        }
+
         Storage::disk('private')->delete($file->path);
         $file->delete();
         return redirect()->back()->with('success', 'File deleted successfully');

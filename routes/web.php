@@ -3,6 +3,7 @@
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StarredController;
+use App\Http\Controllers\IPFSController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Add the starred route
     Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
+
+    // Add IPFS routes
+    Route::get('/ipfs', [IPFSController::class, 'index'])->name('ipfs.index');
+    Route::post('/ipfs/upload/{id}', [IPFSController::class, 'uploadToIPFS'])->name('ipfs.upload');
+    Route::delete('/ipfs/remove/{id}', [IPFSController::class, 'removeFromIPFS'])->name('ipfs.remove');
 });
 
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@inertiajs/react';
-import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal } from 'lucide-react';
+import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal, Info } from 'lucide-react';
 import axios from 'axios';
-
+import FileDetailModal from './FileDetailModal';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -22,44 +22,40 @@ const getFileIcon = (type) => {
 };
 
 export const RecentFiles = ({ recentFiles }) => {
-    const [folders, setFolders] = useState([]); 
-    const [loadingFolders, setLoadingFolders] = useState(true); 
-    const [dropdownOpen, setDropdownOpen] = useState(false); 
-    const [selectedFileId, setSelectedFileId] = useState(null); 
-    const dropdownRef = useRef(null); 
+    const [folders, setFolders] = useState([]);
+    const [loadingFolders, setLoadingFolders] = useState(true);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [selectedFileId, setSelectedFileId] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const dropdownRef = useRef(null);
 
-    
     useEffect(() => {
         function handleClickOutside(event) {
-            
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
-                setSelectedFileId(null); 
+                setSelectedFileId(null);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [dropdownRef]); 
-    
+    }, [dropdownRef]);
 
-    
     useEffect(() => {
         setLoadingFolders(true);
-        axios.get(route('sidebar.data')) 
+        axios.get(route('sidebar.data'))
             .then(response => {
-                setFolders(response.data.rootFolders || []); 
+                setFolders(response.data.rootFolders || []);
                 setLoadingFolders(false);
             })
             .catch(error => {
                 console.error('Error fetching folders:', error);
                 setLoadingFolders(false);
             });
-    }, []); 
-    
+    }, []);
 
-    
     const handleMoveFile = (fileId, folderId) => {
         console.log(`Attempting to move file ID: ${fileId} to folder ID: ${folderId === null ? 'Root' : folderId}`);
 
@@ -67,7 +63,7 @@ export const RecentFiles = ({ recentFiles }) => {
             folder_id: folderId
         }).then(() => {
             console.log(`Successfully moved file ${fileId}. Reloading page.`);
-            window.location.reload(); 
+            window.location.reload();
         }).catch((error) => {
             console.error('Error moving file:', error);
             if (error.response) {
@@ -82,14 +78,11 @@ export const RecentFiles = ({ recentFiles }) => {
                 alert('Error moving file: Could not send request.');
             }
         }).finally(() => {
-            
             setDropdownOpen(false);
             setSelectedFileId(null);
         });
     };
-    
 
-    
     const toggleDropdown = (fileId) => {
         if (selectedFileId === fileId && dropdownOpen) {
             setDropdownOpen(false);
@@ -99,7 +92,11 @@ export const RecentFiles = ({ recentFiles }) => {
             setDropdownOpen(true);
         }
     };
-    
+
+    const handleShowDetails = (file) => {
+        setSelectedFile(file);
+        setShowDetailModal(true);
+    };
 
     return (
         <div>
@@ -108,8 +105,6 @@ export const RecentFiles = ({ recentFiles }) => {
             </div>
 
             {recentFiles.length > 0 ? (
-                
-                
                 <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                     <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                         <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
@@ -128,25 +123,45 @@ export const RecentFiles = ({ recentFiles }) => {
                                         {file.folder_name}
                                     </span>
                                 )}
+                                {file.ipfs_hash && (
+                                    <span className="text-xs text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full ml-1">
+                                        IPFS
+                                    </span>
+                                )}
                             </div>
                             <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">{file.size}</div>
                             <div className="col-span-2 md:col-span-2 hidden md:flex items-center text-gray-600 dark:text-gray-400">{file.lastModified}</div>
                             <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1">
-                                <Link onClick={() => window.location.href = route('files.download', file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded">
+                                <button
+                                    onClick={() => handleShowDetails(file)}
+                                    className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                    title="File Details"
+                                >
+                                    <Info size={18} />
+                                </button>
+                                <Link
+                                    onClick={() => window.location.href = route('files.download', file.id)}
+                                    className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                >
                                     <Download size={18} />
                                 </Link>
-                                <Link as="button" href={route('files.toggle-star', file.id)} method="post" preserveScroll className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded">
+                                <Link
+                                    as="button"
+                                    href={route('files.toggle-star', file.id)}
+                                    method="post"
+                                    preserveScroll
+                                    className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                >
                                     <Star size={18} fill={file.starred ? "currentColor" : "none"} className={file.starred ? "text-yellow-400" : ""} />
                                 </Link>
                                 <div className="relative">
                                     <button
-                                        onClick={() => toggleDropdown(file.id)} 
+                                        onClick={() => toggleDropdown(file.id)}
                                         className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                                     >
                                         <MoreHorizontal size={18} />
                                     </button>
                                     {dropdownOpen && selectedFileId === file.id && (
-                                        
                                         <div ref={dropdownRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700">
                                             <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">Move to folder</div>
                                             <button onClick={() => handleMoveFile(file.id, null)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -180,8 +195,14 @@ export const RecentFiles = ({ recentFiles }) => {
                     <p className="text-gray-500 dark:text-gray-400">No files yet. Upload files to see them here.</p>
                 </div>
             )}
+
+            <FileDetailModal
+                isOpen={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+                file={selectedFile}
+            />
         </div>
     );
 };
 
-export default RecentFiles; 
+export default RecentFiles;

@@ -23,6 +23,8 @@ class File extends Model
         'type',
         'starred',
         'last_accessed',
+        'ipfs_hash',
+        'ipfs_url',
     ];
 
     protected $casts = [
@@ -31,25 +33,16 @@ class File extends Model
         'last_accessed' => 'datetime',
     ];
 
-    /**
-     * Get the user that owns the file.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the folder that contains the file.
-     */
     public function folder(): BelongsTo
     {
         return $this->belongsTo(Folder::class);
     }
 
-    /**
-     * Get the users with whom this file is shared.
-     */
     public function sharedWith(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'file_shares')
@@ -57,9 +50,6 @@ class File extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Format the file size for human readability.
-     */
     public function getFormattedSizeAttribute(): string
     {
         $bytes = $this->size;
@@ -72,27 +62,23 @@ class File extends Model
         return round($bytes, 2) . ' ' . $units[$i];
     }
 
-    /**
-     * Check if the file is shared.
-     */
     public function getIsSharedAttribute(): bool
     {
         return $this->sharedWith()->count() > 0;
     }
 
-    /**
-     * Get the count of users this file is shared with.
-     */
     public function getShareCountAttribute(): int
     {
         return $this->sharedWith()->count();
     }
 
-    /**
-     * Check if the file is recently modified (within 7 days).
-     */
     public function getIsRecentAttribute(): bool
     {
         return $this->updated_at->diffInDays(now()) <= 7;
+    }
+
+    public function getIsOnIpfsAttribute(): bool
+    {
+        return !empty($this->ipfs_hash);
     }
 }

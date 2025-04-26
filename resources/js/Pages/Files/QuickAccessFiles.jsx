@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { Star, File, FileText, Image, FilePlus, FolderIcon } from 'lucide-react';
+import { Star, File, FileText, Image, FilePlus, FolderIcon, Info } from 'lucide-react';
+import FileDetailModal from './FileDetailModal';
+import IPFSStatus from '@/Pages/IPFS/IPFSStatus';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -20,8 +22,14 @@ const getFileIcon = (type) => {
 };
 
 export const QuickAccessFiles = ({ quickAccessFiles }) => {
-
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
     const reversedFiles = [...quickAccessFiles].reverse();
+
+    const handleShowDetails = (file) => {
+        setSelectedFile(file);
+        setShowDetailModal(true);
+    };
 
     return (
         <div className="mb-8">
@@ -43,21 +51,35 @@ export const QuickAccessFiles = ({ quickAccessFiles }) => {
                                         getFileIcon(file.type)
                                     }
                                 </div>
-                                <Link
-                                    as="button"
-                                    href={file.type === 'folder' ? route('folders.toggle-star', file.id) : route('files.toggle-star', file.id)}
-                                    method="post"
-                                    className="text-gray-400 hover:text-yellow-400"
-                                >
-                                    <Star
-                                        size={18}
-                                        fill={file.starred ? "currentColor" : "none"}
-                                        className={file.starred ? "text-yellow-400" : ""}
-                                    />
-                                </Link>
+                                <div className="flex items-center space-x-1">
+                                    {file.type !== 'folder' && (
+                                        <button
+                                            onClick={() => handleShowDetails(file)}
+                                            className="text-gray-400 hover:text-blue-600 p-1"
+                                            title="File Details"
+                                        >
+                                            <Info size={18} />
+                                        </button>
+                                    )}
+                                    <Link
+                                        as="button"
+                                        href={file.type === 'folder' ? route('folders.toggle-star', file.id) : route('files.toggle-star', file.id)}
+                                        method="post"
+                                        className="text-gray-400 hover:text-yellow-400 p-1"
+                                    >
+                                        <Star
+                                            size={18}
+                                            fill={file.starred ? "currentColor" : "none"}
+                                            className={file.starred ? "text-yellow-400" : ""}
+                                        />
+                                    </Link>
+                                </div>
                             </div>
                             <h3 className="font-medium text-gray-900 dark:text-white mb-1 truncate">{file.name}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{file.date}</p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{file.date}</p>
+                                {file.ipfs_hash && <IPFSStatus isOnIPFS={true} />}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -66,6 +88,12 @@ export const QuickAccessFiles = ({ quickAccessFiles }) => {
                     <p className="text-gray-500 dark:text-gray-400">No quick access files yet. Files you use frequently will appear here.</p>
                 </div>
             )}
+
+            <FileDetailModal
+                isOpen={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+                file={selectedFile}
+            />
         </div>
     );
 };

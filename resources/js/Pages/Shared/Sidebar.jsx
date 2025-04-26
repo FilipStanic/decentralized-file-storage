@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
+import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X, Database } from 'lucide-react';
 
 export const Sidebar = ({ expanded, onCreateNew }) => {
     const { sharedSidebarFolders = [] } = usePage().props;
@@ -87,6 +87,18 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                     >
                         <Star size={18} className="text-yellow-500" />
                         <span>Starred</span>
+                    </Link>
+                    <Link
+                        href={route('ipfs.index')}
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('ipfs.index')
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
+                        onClick={() => setMobileOpen(false)}
+                    >
+                        <Database size={18} className="text-blue-500" />
+                        <span>IPFS</span>
                     </Link>
                 </div>
 
