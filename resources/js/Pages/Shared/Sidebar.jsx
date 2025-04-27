@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X, Database } from 'lucide-react';
+import StorageIndicator from '@/Pages/StorageIndicator.jsx'
 
 export const Sidebar = ({ expanded, onCreateNew }) => {
     const { sharedSidebarFolders = [] } = usePage().props;
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Determine if the current route matches
     const isCurrentRoute = (routeName) => {
         return route().current(routeName);
     };
@@ -167,13 +167,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 </div>
             </div>
 
-            <div className="mt-auto p-4 border-t dark:border-gray-700">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">0 GB of 50 GB used</div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div className="bg-indigo-600 h-2 rounded-full w-0"></div>
-                </div>
-                <button className="text-indigo-600 dark:text-indigo-400 text-sm mt-2">Upgrade</button>
-            </div>
+            <StorageIndicator />
         </>
     );
 

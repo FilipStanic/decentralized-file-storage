@@ -16,7 +16,6 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                 if (onSuccess && typeof onSuccess === 'function') {
                     onSuccess(response.data);
                 }
-                // Reload page to show updated IPFS status
                 window.location.reload();
             })
             .catch(error => {
@@ -30,13 +29,15 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
         setLoading(true);
         setError(null);
 
-        axios.delete(route('ipfs.remove', fileId))
+
+        axios.post(route('ipfs.remove', fileId), {
+            _method: 'DELETE'
+        })
             .then(response => {
                 setLoading(false);
                 if (onSuccess && typeof onSuccess === 'function') {
                     onSuccess(response.data);
                 }
-                // Reload page to show updated IPFS status
                 window.location.reload();
             })
             .catch(error => {
@@ -46,7 +47,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
             });
     };
 
-    // Determine button sizes based on the buttonSize prop
+
     const sizes = {
         small: {
             button: "px-2 py-1 text-xs",

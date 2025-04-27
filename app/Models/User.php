@@ -2,42 +2,25 @@
 
 namespace App\Models;
 
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -46,25 +29,16 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get all files owned by the user.
-     */
     public function files()
     {
         return $this->hasMany(File::class);
     }
 
-    /**
-     * Get all folders owned by the user.
-     */
     public function folders()
     {
         return $this->hasMany(Folder::class);
     }
 
-    /**
-     * Get all files shared with the user.
-     */
     public function sharedFiles()
     {
         return $this->belongsToMany(File::class, 'file_shares')
@@ -72,13 +46,68 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    /**
-     * Get all folders shared with the user.
-     */
     public function sharedFolders()
     {
         return $this->belongsToMany(Folder::class, 'folder_shares')
             ->withPivot('permission')
             ->withTimestamps();
+    }
+
+
+    public function getLocalStorageUsedAttribute()
+    {
+        return $this->files()->sum('size');
+    }
+
+    public function getIpfsStorageUsedAttribute()
+    {
+        return $this->files()->whereNotNull('ipfs_hash')->sum('size');
+    }
+
+
+    public function getFormattedLocalStorageUsedAttribute()
+    {
+        return $this->formatBytes($this->local_storage_used);
+    }
+
+
+    public function getFormattedIpfsStorageUsedAttribute()
+    {
+        return $this->formatBytes($this->ipfs_storage_used);
+    }
+
+
+    public function getIpfsStoragePercentageAttribute()
+    {
+        $limit = 1 * 1024 * 1024 * 1024; // 1GB in bytes
+        $percentage = ($this->ipfs_storage_used / $limit) * 100;
+        return min(round($percentage, 1), 100);
+    }
+
+
+    public function getLocalStoragePercentageAttribute()
+    {
+        $limit = 50 * 1024 * 1024 * 1024;
+        $percentage = ($this->local_storage_used / $limit) * 100;
+        return min(round($percentage, 1), 100);
+    }
+
+    protected function formatBytes($bytes, $precision = 2)
+    {
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $base = 1024;
+        $exponent = floor(log($bytes) / log($base));
+
+        return round($bytes / pow($base, $exponent), $precision) . ' ' . $units[$exponent];
+    }
+
+    public function hasEnoughIpfsStorage($fileSize)
+    {
+        $limit = 1 * 1024 * 1024 * 1024; // 1GB in bytes
+        return ($this->ipfs_storage_used + $fileSize) <= $limit;
     }
 }

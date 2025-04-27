@@ -6,6 +6,8 @@ use App\Models\File;
 use App\Services\PinataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class IPFSController extends Controller
@@ -38,20 +40,31 @@ class IPFSController extends Controller
             });
 
         return Inertia::render('IPFS/Index', [
-            'ipfsFiles' => $ipfsFiles
+            'ipfsFiles' => $ipfsFiles,
+            'storageStats' => [
+                'used' => $user->formatted_ipfs_storage_used,
+                'percentage' => $user->ipfs_storage_percentage,
+                'limit' => '1.00 GB',
+            ]
         ]);
     }
 
     public function uploadToIPFS($id)
     {
         $file = File::findOrFail($id);
+        $user = Auth::user();
 
-        if (Auth::id() !== $file->user_id) {
+        if ($user->id !== $file->user_id) {
             abort(403);
         }
 
         if ($file->ipfs_hash) {
             return redirect()->back()->with('error', 'File is already on IPFS');
+        }
+
+        // Check if user has enough storage remaining
+        if (!$user->hasEnoughIpfsStorage($file->size)) {
+            return redirect()->back()->with('error', 'IPFS storage limit exceeded. Your limit is 1GB.');
         }
 
         $localPath = storage_path('app/private/' . $file->path);
@@ -106,5 +119,23 @@ class IPFSController extends Controller
         }
 
         return redirect()->back()->with('error', 'Failed to remove file from IPFS');
+    }
+
+    public function storageStats()
+    {
+        $user = Auth::user();
+
+        return response()->json([
+            'ipfs' => [
+                'used' => $user->formatted_ipfs_storage_used,
+                'percentage' => $user->ipfs_storage_percentage,
+                'limit' => '1.00 GB'
+            ],
+            'local' => [
+                'used' => $user->formatted_local_storage_used,
+                'percentage' => $user->local_storage_percentage,
+                'limit' => '50.00 GB'
+            ]
+        ]);
     }
 }

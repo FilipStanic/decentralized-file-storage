@@ -38,10 +38,11 @@ Route::middleware(['auth'])->group(function () {
     // Add the starred route
     Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
 
-    // Add IPFS routes
+    // IPFS routes
     Route::get('/ipfs', [IPFSController::class, 'index'])->name('ipfs.index');
     Route::post('/ipfs/upload/{id}', [IPFSController::class, 'uploadToIPFS'])->name('ipfs.upload');
     Route::delete('/ipfs/remove/{id}', [IPFSController::class, 'removeFromIPFS'])->name('ipfs.remove');
+    Route::get('/storage/stats', [IPFSController::class, 'storageStats'])->name('storage.stats');
 });
 
 

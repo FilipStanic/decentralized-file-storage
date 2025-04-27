@@ -114,12 +114,18 @@ class FileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:102400',
+            'file' => 'required|file|max:102400', // 100MB max
             'folder_id' => 'nullable|exists:folders,id',
         ]);
 
         $file = $request->file('file');
         $user = Auth::user();
+
+        // Check if user has reached the local storage limit (50GB)
+        $localStorageLimit = 50 * 1024 * 1024 * 1024; // 50GB in bytes
+        if ($user->local_storage_used + $file->getSize() > $localStorageLimit) {
+            return redirect()->back()->with('error', 'Local storage limit reached (50GB). Please delete some files first.');
+        }
 
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
@@ -137,16 +143,21 @@ class FileController extends Controller
         elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) { $type = 'Presentation'; }
         elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) { $type = 'Document'; }
 
-        // Upload file to IPFS via Pinata
-        $pinataResult = $this->pinataService->uploadFile($file);
-
+        // For auto-upload to IPFS, check if there's enough IPFS storage (uncomment if you want auto IPFS upload)
+        /*
         $ipfsHash = null;
         $ipfsUrl = null;
 
-        if ($pinataResult && isset($pinataResult['IpfsHash'])) {
-            $ipfsHash = $pinataResult['IpfsHash'];
-            $ipfsUrl = $this->pinataService->getGatewayUrl($ipfsHash);
+        if ($user->hasEnoughIpfsStorage($file->getSize())) {
+            // Upload file to IPFS via Pinata
+            $pinataResult = $this->pinataService->uploadFile($file);
+
+            if ($pinataResult && isset($pinataResult['IpfsHash'])) {
+                $ipfsHash = $pinataResult['IpfsHash'];
+                $ipfsUrl = $this->pinataService->getGatewayUrl($ipfsHash);
+            }
         }
+        */
 
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
@@ -158,11 +169,11 @@ class FileController extends Controller
             'type' => $type,
             'folder_id' => $request->folder_id,
             'last_accessed' => now(),
-            'ipfs_hash' => $ipfsHash,
-            'ipfs_url' => $ipfsUrl,
+            'ipfs_hash' => null, // Set to $ipfsHash if auto-uploading to IPFS
+            'ipfs_url' => null,  // Set to $ipfsUrl if auto-uploading to IPFS
         ]);
 
-        return redirect()->back()->with('success', 'File uploaded successfully to local storage and IPFS');
+        return redirect()->back()->with('success', 'File uploaded successfully to local storage');
     }
 
     public function download($id)
