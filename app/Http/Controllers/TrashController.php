@@ -70,10 +70,11 @@ class TrashController extends Controller
                 abort(403);
             }
 
-            $file->update([
-                'is_trashed' => true,
-                'trashed_at' => now()
-            ]);
+            // Remove file from its parent folder
+            $file->folder_id = null;
+            $file->is_trashed = true;
+            $file->trashed_at = now();
+            $file->save();
 
             return redirect()->back()->with('success', 'File moved to trash');
         } else {
@@ -83,10 +84,11 @@ class TrashController extends Controller
                 abort(403);
             }
 
-            $folder->update([
-                'is_trashed' => true,
-                'trashed_at' => now()
-            ]);
+            // Remove folder from its parent
+            $folder->parent_id = null;
+            $folder->is_trashed = true;
+            $folder->trashed_at = now();
+            $folder->save();
 
             return redirect()->back()->with('success', 'Folder moved to trash');
         }
@@ -109,10 +111,10 @@ class TrashController extends Controller
                 abort(403);
             }
 
-            $file->update([
-                'is_trashed' => false,
-                'trashed_at' => null
-            ]);
+            // Note: folder_id remains null, it will be restored to root level
+            $file->is_trashed = false;
+            $file->trashed_at = null;
+            $file->save();
 
             return redirect()->back()->with('success', 'File restored');
         } else {
@@ -122,10 +124,10 @@ class TrashController extends Controller
                 abort(403);
             }
 
-            $folder->update([
-                'is_trashed' => false,
-                'trashed_at' => null
-            ]);
+            // Note: parent_id remains null, it will be restored to root level
+            $folder->is_trashed = false;
+            $folder->trashed_at = null;
+            $folder->save();
 
             return redirect()->back()->with('success', 'Folder restored');
         }

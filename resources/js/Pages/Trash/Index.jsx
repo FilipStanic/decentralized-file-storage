@@ -52,9 +52,11 @@ const TrashItem = ({ item, onRestore, onDelete }) => {
 
 export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
     const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const isAuthenticated = auth && auth.user;
 
     const handleRestore = (item) => {
+        setIsLoading(true);
         axios.post(route('trash.restore'), {
             item_type: item.item_type,
             item_id: item.id
@@ -64,12 +66,13 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
             })
             .catch(error => {
                 console.error('Error restoring item:', error);
-                alert('Failed to restore item');
+                setIsLoading(false);
             });
     };
 
     const handleDelete = (item) => {
         if (confirm(`Permanently delete ${item.name}? This action cannot be undone.`)) {
+            setIsLoading(true);
             axios.delete(route('trash.delete'), {
                 data: {
                     item_type: item.item_type,
@@ -81,7 +84,7 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
                 })
                 .catch(error => {
                     console.error('Error deleting item:', error);
-                    alert('Failed to delete item');
+                    setIsLoading(false);
                 });
         }
     };
@@ -95,28 +98,51 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
                 })
                 .catch(error => {
                     console.error('Error emptying trash:', error);
-                    alert('Failed to empty trash');
                     setIsEmptyingTrash(false);
                 });
         }
     };
 
+    // Sort trashed items by their trashed_at date (newer first)
     const allTrashedItems = [
         ...trashedFolders.map(folder => ({ ...folder, item_type: 'folder' })),
         ...trashedFiles.map(file => ({ ...file, item_type: 'file' }))
     ].sort((a, b) => {
-        // Convert to Date objects for comparison (trashed_at is a string like "2 hours ago")
-        // This is a simple approximation - newer items should appear first
-        const aDate = a.trashed_at.includes('minute') ? 0 :
-            a.trashed_at.includes('hour') ? 1 :
-                a.trashed_at.includes('day') ? 2 : 3;
+        // Parse human-readable dates
+        const getTimeValue = (timeString) => {
+            const num = parseInt(timeString.split(' ')[0]);
+            if (timeString.includes('second')) return num;
+            if (timeString.includes('minute')) return num * 60;
+            if (timeString.includes('hour')) return num * 3600;
+            if (timeString.includes('day')) return num * 86400;
+            if (timeString.includes('week')) return num * 604800;
+            if (timeString.includes('month')) return num * 2592000;
+            return 0;
+        };
 
-        const bDate = b.trashed_at.includes('minute') ? 0 :
-            b.trashed_at.includes('hour') ? 1 :
-                b.trashed_at.includes('day') ? 2 : 3;
+        // Lower value means MORE recent
+        const aValue = getTimeValue(a.trashed_at);
+        const bValue = getTimeValue(b.trashed_at);
 
-        return aDate - bDate;
+        return aValue - bValue;
     });
+
+    if (isLoading) {
+        return (
+            <>
+                <Head title="Processing..." />
+                <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+                    <Sidebar expanded={true} onCreateNew={() => {}} />
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600 mb-4"></div>
+                            <div className="text-gray-700 dark:text-gray-300">Processing...</div>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -143,11 +169,11 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
                             <button
                                 onClick={handleEmptyTrash}
                                 disabled={isEmptyingTrash}
-                                className="mt-4 md:mt-0 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center justify-center"
+                                className="mt-4 md:mt-0 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center justify-center disabled:opacity-70"
                             >
                                 {isEmptyingTrash ? (
                                     <>
-                                        <span className="animate-spin mr-2">⟳</span>
+                                        <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
                                         Emptying...
                                     </>
                                 ) : (
@@ -161,8 +187,8 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
                     </div>
 
                     {allTrashedItems.length > 0 ? (
-                        <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                            <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm">
+                            <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300">
                                 <div className="col-span-5 md:col-span-5 flex items-center gap-2">Name</div>
                                 <div className="col-span-3 md:col-span-4 hidden sm:flex items-center gap-2">Deleted</div>
                                 <div className="col-span-4 md:col-span-3 hidden sm:flex items-center gap-2">Auto-Delete</div>
@@ -179,7 +205,7 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-16 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                        <div className="text-center py-16 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm">
                             <div className="inline-flex rounded-full bg-gray-100 dark:bg-gray-700 p-4 mb-4">
                                 <Trash2 size={24} className="text-gray-500 dark:text-gray-400" />
                             </div>
