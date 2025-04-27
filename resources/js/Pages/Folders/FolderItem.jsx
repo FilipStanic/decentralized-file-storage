@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { FolderIcon, Star, Trash2 } from 'lucide-react';
+import { FolderIcon, Star, Trash2, Pencil } from 'lucide-react'; // Added Pencil
 import DeleteFolderModal from './DeleteFolderModal.jsx';
+import axios from 'axios'; // Added axios import
 
-const FolderItem = ({ folder }) => {
+const FolderItem = ({ folder, onRenameClick }) => { // Added onRenameClick prop
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Function to handle star toggle without full page reload (optional improvement)
+    const handleToggleStar = (e) => {
+        e.preventDefault();
+        axios.post(route('folders.toggle-star', folder.id))
+            .then(() => {
+                // Ideally use Inertia partial reload here if star status affects other props
+                router.reload({ only: ['folders', 'quickAccessFiles'], preserveScroll: true, preserveState: true });
+            })
+            .catch(error => console.error('Error toggling star:', error));
+    };
 
     return (
         <>
@@ -15,13 +27,19 @@ const FolderItem = ({ folder }) => {
                             <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />
                         </div>
                     </Link>
-                    <div className="flex items-center space-x-1">
+                    {/* Action Icons */}
+                    <div className="flex items-center space-x-0.5"> {/* Reduced space */}
+                         <button
+                             onClick={() => onRenameClick(folder)} // Call passed prop
+                             className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                             title="Rename Folder"
+                         >
+                             <Pencil size={18} />
+                         </button>
                         <button
-                            onClick={() => {
-                                axios.post(route('folders.toggle-star', folder.id))
-                                    .then(() => window.location.reload());
-                            }}
-                            className="text-gray-400 hover:text-yellow-400 p-1"
+                            onClick={handleToggleStar} // Use handler
+                            className="text-gray-400 hover:text-yellow-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title={folder.starred ? "Unstar" : "Star"}
                         >
                             <Star
                                 size={18}
@@ -31,7 +49,8 @@ const FolderItem = ({ folder }) => {
                         </button>
                         <button
                             onClick={() => setShowDeleteModal(true)}
-                            className="text-gray-400 hover:text-red-600 p-1"
+                            className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title="Delete Folder"
                         >
                             <Trash2 size={18} />
                         </button>

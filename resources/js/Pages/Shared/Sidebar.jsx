@@ -8,7 +8,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Load folder section state from localStorage on component mount
+    
     useEffect(() => {
         const savedState = localStorage.getItem('folderSectionOpen');
         if (savedState !== null) {
@@ -16,7 +16,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
         }
     }, []);
 
-    // Determine if the current route matches
+    
     const isCurrentRoute = (routeName) => {
         return route().current(routeName);
     };
@@ -24,7 +24,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const toggleFolderSection = () => {
         const newState = !folderSectionOpen;
         setFolderSectionOpen(newState);
-        // Save state to localStorage
+        
         localStorage.setItem('folderSectionOpen', newState.toString());
     };
 

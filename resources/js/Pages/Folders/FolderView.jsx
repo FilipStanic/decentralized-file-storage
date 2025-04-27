@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react'; 
 import { ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image, FolderIcon, Info } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
@@ -7,26 +7,22 @@ import Header from '@/Pages/Shared/Header.jsx';
 import UploadModal from '@/Pages/UploadModal';
 import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
 import FolderItem from '@/Pages/Folders/FolderItem.jsx';
+import RenameFolderModal from '@/Pages/Folders/RenameFolderModal.jsx'; 
+import ConfirmDeleteModal from '@/Pages/ConfirmDeleteModal.jsx'; 
 import { useSearch } from '@/Pages/Context/SearchContext.jsx';
 import FileDetailModal from '@/Pages/Files/FileDetailModal.jsx';
 
+
 const getFileIcon = (type) => {
     switch (type) {
-        case 'Image':
-            return <Image className="text-green-500" />;
-        case 'PDF':
-            return <FileText className="text-red-500" />;
-        case 'Spreadsheet':
-            return <FileText className="text-emerald-500" />;
-        case 'Presentation':
-            return <FileText className="text-orange-500" />;
-        case 'Document':
-            return <FileText className="text-blue-500" />;
-        default:
-            return <File className="text-gray-500" />;
+        case 'Image': return <Image className="text-green-500" />;
+        case 'PDF': return <FileText className="text-red-500" />;
+        case 'Spreadsheet': return <FileText className="text-emerald-500" />;
+        case 'Presentation': return <FileText className="text-orange-500" />;
+        case 'Document': return <FileText className="text-blue-500" />;
+        default: return <File className="text-gray-500" />;
     }
 };
-
 
 const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
     return (
@@ -34,7 +30,6 @@ const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
             <Link href={route('folders.show')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                 Folders
             </Link>
-
             {breadcrumbs.map((breadcrumb, index) => (
                 <React.Fragment key={breadcrumb.id}>
                     <ChevronRight size={16} className="mx-1 text-gray-400" />
@@ -50,22 +45,24 @@ const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
     );
 };
 
-
 export default function FolderView({ auth, currentFolder, breadcrumbs, folders, files }) {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedFileId, setSelectedFileId] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
+    const [showRenameModal, setShowRenameModal] = useState(false); 
+    const [folderToRename, setFolderToRename] = useState(null); 
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false); 
+    const [itemToDelete, setItemToDelete] = useState(null); 
+
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
-
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
+    const [dropdownOpen, setDropdownOpen] = useState(null); 
+    const [selectedFileId, setSelectedFileId] = useState(null);
 
     const { searchTerm, isSearching } = useSearch();
-
     const [filteredFolders, setFilteredFolders] = useState(folders);
     const [filteredFiles, setFilteredFiles] = useState(files);
     const [totalResults, setTotalResults] = useState(0);
@@ -95,20 +92,16 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             });
     }, [currentFolder]);
 
-
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
+                setDropdownOpen(null); 
                 setSelectedFileId(null);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef]);
-
 
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -126,168 +119,133 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     }, [searchTerm, folders, files]);
 
     const handleMoveFile = (fileId, folderId) => {
-        console.log(`Attempting to move file ID: ${fileId} to folder ID: ${folderId === null ? 'Root' : folderId}`);
-
-        axios.post(route('files.move', fileId), {
-            folder_id: folderId
-        }).then(() => {
-            console.log(`Successfully moved file ${fileId}. Reloading page.`);
-            window.location.reload();
-        }).catch((error) => {
-            console.error('Error moving file:', error);
-            if (error.response) {
-                console.error('Error Response Data:', error.response.data);
-                console.error('Error Response Status:', error.response.status);
-                alert(`Error moving file: ${error.response.data.message || 'Please try again.'}`);
-            } else if (error.request) {
-                console.error('Error Request:', error.request);
-                alert('Error moving file: No response from server.');
-            } else {
-                console.error('Error Message:', error.message);
-                alert('Error moving file: Could not send request.');
-            }
-        }).finally(() => {
-            setDropdownOpen(false);
-            setSelectedFileId(null);
-        });
+        axios.post(route('files.move', fileId), { folder_id: folderId })
+            .then(() => window.location.reload())
+            .catch(error => console.error('Error moving file:', error))
+            .finally(() => { setDropdownOpen(null); setSelectedFileId(null); });
     };
-
 
     const handleUpload = () => setShowUploadModal(true);
     const handleNewFolder = () => setShowFolderModal(true);
     const handleFileUpload = () => fileInputRef.current.click();
-
-    const handleFileChange = (e) => {
-        if (e.target.files.length > 0) {
-            setData({ ...data, file: e.target.files[0] });
-        }
-    };
-
-    const handleDrag = (e) => {
-        e.preventDefault(); e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
-        else if (e.type === 'dragleave') setDragActive(false);
-    };
-
+    const handleFileChange = (e) => { if (e.target.files.length > 0) setData({ ...data, file: e.target.files[0] }); };
+    const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); setDragActive(e.type === "dragenter" || e.type === "dragover"); };
     const handleDrop = (e) => {
         e.preventDefault(); e.stopPropagation(); setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setData({ ...data, file: e.dataTransfer.files[0] });
-            setShowUploadModal(true);
-        }
+        if (e.dataTransfer.files?.[0]) { setData({ ...data, file: e.dataTransfer.files[0] }); setShowUploadModal(true); }
+    };
+    const handleSubmit = (e) => {
+        if (e) e.preventDefault(); if (!data.file) return; setProcessing(true); setProgress(0);
+        const formData = new FormData(); formData.append('file', data.file);
+        if (currentFolder) formData.append('folder_id', currentFolder.id);
+        axios.post(route('files.store'), formData, { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress: p => setProgress(Math.round((p.loaded * 100) / p.total)) })
+            .then(() => { setShowUploadModal(false); setData({ file: null }); setProgress(null); window.location.reload(); })
+            .catch(err => setErrors(err.response?.data?.errors || { file: "Upload failed." }))
+            .finally(() => setProcessing(false));
+    };
+    const handleCreateFolder = (folderData) => {
+        setProcessingFolder(true); if (currentFolder) folderData.parent_id = currentFolder.id;
+        axios.post(route('folders.store'), folderData)
+            .then(() => { setShowFolderModal(false); window.location.reload(); })
+            .catch(error => console.error('Error creating folder:', error))
+            .finally(() => setProcessingFolder(false));
+    };
+    const toggleDropdown = (fileId) => setDropdownOpen(prev => (prev === fileId ? null : fileId)); 
+    const handleShowDetails = (file) => { setSelectedFile(file); setShowDetailModal(true); };
+
+    
+    const handleRenameClick = (folder) => {
+        setFolderToRename(folder);
+        setShowRenameModal(true);
     };
 
-    const handleSubmit = (e) => {
-        if (e) e.preventDefault();
-        if (!data.file) return;
-        setProcessing(true); setProgress(0);
+    
+    const handleDeleteClick = (event, file) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setItemToDelete(file);
+        setShowConfirmDeleteModal(true);
+        setDropdownOpen(null); 
+    };
 
-        const formData = new FormData();
-        formData.append('file', data.file);
-        if (currentFolder) formData.append('folder_id', currentFolder.id);
-
-        axios.post(route('files.store'), formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            onUploadProgress: progressEvent => {
-                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setProgress(percentCompleted);
+    
+    const confirmDeleteAction = () => {
+        if (!itemToDelete) return;
+        router.delete(route('files.destroy', itemToDelete.id), {
+            preserveScroll: true,
+            preserveState: true, 
+            only: ['files'], 
+            onSuccess: () => {
+                
+                setFilteredFiles(prev => prev.filter(f => f.id !== itemToDelete.id));
+                 setShowConfirmDeleteModal(false);
+                 setItemToDelete(null);
+            },
+            onError: (errors) => {
+                console.error('Error deleting item:', errors);
+                alert('Failed to delete the item. Please try again.');
+                setShowConfirmDeleteModal(false);
+                setItemToDelete(null);
             }
-        }).then(() => {
-            setShowUploadModal(false); setData({ file: null }); setProgress(null);
-            window.location.reload();
-        }).catch(error => {
-            if (error.response && error.response.data.errors) {
-                setErrors(error.response.data.errors);
-            } else {
-                console.error("Upload error:", error);
-                setErrors({ file: "Upload failed. Please try again." });
-            }
-        }).finally(() => {
-            setProcessing(false);
         });
     };
 
-    const handleCreateFolder = (folderData) => {
-        setProcessingFolder(true);
-        if (currentFolder) folderData.parent_id = currentFolder.id;
+     const handleFileToggleStar = (event, fileId) => {
+         event.preventDefault();
+         router.post(route('files.toggle-star', fileId), {}, {
+             preserveScroll: true,
+             preserveState: true,
+             only: ['files', 'quickAccessFiles'], 
+             onSuccess: (page) => {
+                
+                setFilteredFiles(prevFiles => prevFiles.map(f => f.id === fileId ? {...f, starred: !f.starred} : f))
+             }
+         });
+    }
 
-        axios.post(route('folders.store'), folderData)
-            .then(() => {
-                setShowFolderModal(false);
-                window.location.reload();
-            })
-            .catch(error => {
-                console.error('Error creating folder:', error);
-            })
-            .finally(() => {
-                setProcessingFolder(false);
-            });
-    };
-
-    const toggleDropdown = (fileId) => {
-        if (selectedFileId === fileId && dropdownOpen) {
-            setDropdownOpen(false);
-            setSelectedFileId(null);
-        } else {
-            setSelectedFileId(fileId);
-            setDropdownOpen(true);
-        }
-    };
-
-    const handleShowDetails = (file) => {
-        setSelectedFile(file);
-        setShowDetailModal(true);
-    };
 
     return (
         <>
             <Head title={currentFolder ? currentFolder.name : 'All Folders'} />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
                 <Sidebar expanded={true} onCreateNew={(type) => type === 'folder' ? handleNewFolder() : handleUpload()} />
 
-                <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900">
+                <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900" onDragOver={handleDrag} onDragEnter={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop}>
                     <Header isAuthenticated={isAuthenticated} auth={auth} onUserDropdownToggle={() => {}} />
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
-
 
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
                         <div>
                             <h1 className="text-xl sm:text-2xl font-semibold dark:text-white truncate">
-                                {isSearching
-                                    ? `Search Results in ${currentFolder ? currentFolder.name : 'All Folders'}`
-                                    : (currentFolder ? currentFolder.name : 'Folders')}
+                                {isSearching ? `Search Results in ${currentFolder ? currentFolder.name : 'All Folders'}` : (currentFolder ? currentFolder.name : 'Folders')}
                             </h1>
-                            {isSearching && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    Found {totalResults} {totalResults === 1 ? 'result' : 'results'} for "{searchTerm}"
-                                </p>
-                            )}
+                            {isSearching && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Found {totalResults} {totalResults === 1 ? 'result' : 'results'} for "{searchTerm}"</p>}
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0">
-                            <button onClick={handleUpload} className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">
-                                <FilePlus size={16} className="hidden sm:block" /><span>Upload</span>
-                            </button>
-                            <button onClick={handleNewFolder} className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white text-sm">
+                            <button
+                                onClick={handleNewFolder}
+                                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm" /* Changed classes */
+                            >
                                 <Plus size={16} className="hidden sm:block" /><span>New Folder</span>
                             </button>
                         </div>
                     </div>
 
-                    {filteredFolders.length > 0 && !isSearching && (
+                    {filteredFolders.length > 0 && (
                         <div className="mb-8">
-                            <h2 className="text-lg font-medium mb-4 dark:text-white">Folders</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {filteredFolders.map((folder) => <FolderItem key={folder.id} folder={folder} />)}
-                            </div>
+                             <h2 className="text-lg font-medium mb-4 dark:text-white">{isSearching ? 'Folders Found' : 'Folders'}</h2>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                 {filteredFolders.map((folder) => <FolderItem key={folder.id} folder={folder} onRenameClick={handleRenameClick} />)}
+                             </div>
                         </div>
                     )}
 
-
-                    <div>
-                        <h2 className="text-lg font-medium mb-4 dark:text-white">Files</h2>
+                     <div className="mb-8">
+                         <h2 className="text-lg font-medium mb-4 dark:text-white">{isSearching ? 'Files Found' : 'Files'}</h2>
                         {filteredFiles.length > 0 ? (
-                            <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+                            <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
                                 <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                                     <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
                                     <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
@@ -299,100 +257,62 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                         <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden">
                                             <div className="flex-shrink-0">{getFileIcon(file.type)}</div>
                                             <span className="truncate dark:text-white">{file.name}</span>
-                                            {file.ipfs_hash && (
-                                                <span className="text-xs text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full ml-1">
-                                                    IPFS
-                                                </span>
-                                            )}
+                                            {file.ipfs_hash && <span className="text-xs text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full ml-1 whitespace-nowrap">IPFS</span>}
                                         </div>
                                         <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">{file.size}</div>
                                         <div className="col-span-2 md:col-span-2 hidden md:flex items-center text-gray-600 dark:text-gray-400">{file.lastModified}</div>
                                         <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1">
-                                            <button
-                                                onClick={() => handleShowDetails(file)}
-                                                className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                                                title="File Details"
-                                            >
-                                                <Info size={18} />
-                                            </button>
-                                            <Link onClick={() => window.location.href = route('files.download', file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded">
-                                                <Download size={18} />
-                                            </Link>
-                                            <Link as="button" href={route('files.toggle-star', file.id)} method="post" preserveScroll className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded">
-                                                <Star size={18} fill={file.starred ? "currentColor" : "none"} className={file.starred ? "text-yellow-400" : ""} />
-                                            </Link>
+                                            <button onClick={() => handleShowDetails(file)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded" title="File Details"><Info size={18} /></button>
+                                            <a href={route('files.download', file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded" title="Download"><Download size={18} /></a>
+                                             <button onClick={(e) => handleFileToggleStar(e, file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded" title={file.starred ? "Unstar" : "Star"}><Star size={18} fill={file.starred ? "currentColor" : "none"} className={file.starred ? "text-yellow-400" : ""} /></button>
                                             <div className="relative">
-                                                <button
-                                                    onClick={() => toggleDropdown(file.id)}
-                                                    className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                                                >
-                                                    <MoreHorizontal size={18} />
-                                                </button>
-                                                {dropdownOpen && selectedFileId === file.id && (
+                                                <button onClick={() => toggleDropdown(file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="More options"><MoreHorizontal size={18} /></button>
+                                                {dropdownOpen === file.id && ( 
                                                     <div ref={dropdownRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700">
                                                         <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">Move to folder</div>
-                                                        <button onClick={() => handleMoveFile(file.id, null)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                            Root folder
-                                                        </button>
-                                                        {loadingDestinations ? (
-                                                            <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
-                                                        ) : (
-                                                            destinationFolders.map(folder => (
-                                                                <button key={folder.id} onClick={() => handleMoveFile(file.id, folder.id)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                                    {folder.name}
-                                                                </button>
-                                                            ))
-                                                        )}
+                                                        <button onClick={() => handleMoveFile(file.id, null)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Root folder</button>
+                                                        {loadingDestinations ? <div className="px-4 py-2 text-sm text-gray-500">Loading...</div> : destinationFolders.map(folder => (<button key={folder.id} onClick={() => handleMoveFile(file.id, folder.id)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{folder.name}</button>))}
                                                         <div className="border-t dark:border-gray-700 my-1"></div>
-                                                        <Link href={route('files.destroy', file.id)} method="delete" as="button" preserveScroll className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">
-                                                            Delete
-                                                        </Link>
+                                                        <button type="button" onClick={(e) => handleDeleteClick(e, file)} className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">Delete</button>
                                                     </div>
                                                 )}
                                             </div>
-                                            <Link href={route('files.destroy', file.id)} method="delete" as="button" preserveScroll className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
-                                                <Trash2 size={18} />
-                                            </Link>
+                                            <button type="button" onClick={(e) => handleDeleteClick(e, file)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded" title="Delete"><Trash2 size={18} /></button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center py-8 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
-                                {isSearching ? (
-                                    <p className="text-gray-500 dark:text-gray-400">No files matching "{searchTerm}" in this folder.</p>
-                                ) : (
-                                    <p className="text-gray-500 dark:text-gray-400">No files in this folder. Upload files to see them here.</p>
-                                )}
+                                {isSearching ? <p className="text-gray-500 dark:text-gray-400">No files matching "{searchTerm}" {currentFolder ? 'in this folder' : ''}.</p> : <p className="text-gray-500 dark:text-gray-400">No files {currentFolder ? 'in this folder' : ''}. Upload files to see them here.</p>}
                             </div>
                         )}
                     </div>
+
+                     {isSearching && totalResults === 0 && (
+                         <div className="text-center py-8 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg mt-4">
+                            <p className="text-gray-500 dark:text-gray-400">No items matching "{searchTerm}" {currentFolder ? 'in this folder' : 'found'}.</p>
+                        </div>
+                     )}
+
                 </div>
             </div>
 
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-
-            <UploadModal
-                isOpen={showUploadModal}
-                onClose={() => { setShowUploadModal(false); setData({ file: null }); setProgress(null); setErrors({}); }}
-                file={data.file}
-                dragActive={dragActive} handleDrag={handleDrag} handleDrop={handleDrop}
-                handleFileUpload={handleFileUpload} handleFileChange={handleFileChange}
-                handleSubmit={handleSubmit} fileInputRef={fileInputRef}
-                processing={processing} errors={errors} progress={progress}
-                folderId={currentFolder ? currentFolder.id : null}
+            <UploadModal isOpen={showUploadModal} onClose={() => { setShowUploadModal(false); setData({ file: null }); setProgress(null); setErrors({}); }} file={data.file} dragActive={dragActive} handleDrag={handleDrag} handleDrop={handleDrop} handleFileUpload={handleFileUpload} handleFileChange={handleFileChange} handleSubmit={handleSubmit} fileInputRef={fileInputRef} processing={processing} errors={errors} progress={progress} folderId={currentFolder?.id} />
+            <CreateFolderModal isOpen={showFolderModal} onClose={() => setShowFolderModal(false)} onSubmit={handleCreateFolder} processing={processingFolder} parentId={currentFolder?.id} />
+            <FileDetailModal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} file={selectedFile} />
+            <RenameFolderModal
+                isOpen={showRenameModal}
+                onClose={() => { setShowRenameModal(false); setFolderToRename(null); }}
+                folder={folderToRename}
+                
             />
-            <CreateFolderModal
-                isOpen={showFolderModal}
-                onClose={() => setShowFolderModal(false)}
-                onSubmit={handleCreateFolder}
-                processing={processingFolder}
-                parentId={currentFolder ? currentFolder.id : null}
-            />
-            <FileDetailModal
-                isOpen={showDetailModal}
-                onClose={() => setShowDetailModal(false)}
-                file={selectedFile}
+            <ConfirmDeleteModal
+                isOpen={showConfirmDeleteModal}
+                onClose={() => { setShowConfirmDeleteModal(false); setItemToDelete(null); }}
+                onConfirm={confirmDeleteAction}
+                itemName={itemToDelete?.name}
+                itemType="file"
             />
         </>
     );

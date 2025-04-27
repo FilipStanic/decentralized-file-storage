@@ -30,6 +30,7 @@ class FileController extends Controller
 
         try {
             $recentFiles = $user->files()
+                ->where('is_trashed', false)
                 ->orderByRaw('CASE WHEN last_accessed IS NOT NULL THEN 0 ELSE 1 END')
                 ->orderBy('last_accessed', 'desc')
                 ->orderBy('updated_at', 'desc')
@@ -52,6 +53,7 @@ class FileController extends Controller
                 });
 
             $quickAccessFiles = $user->files()
+                ->where('is_trashed', false)
                 ->where(function($query) {
                     $query->where('starred', true)
                         ->orWhere('last_accessed', '>=', now()->subDays(7));
@@ -75,6 +77,7 @@ class FileController extends Controller
                 });
 
             $starredFolders = $user->folders()
+                ->where('is_trashed', false)
                 ->where('starred', true)
                 ->orderBy('updated_at', 'desc')
                 ->limit(4)
@@ -114,15 +117,14 @@ class FileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:102400', // 100MB max
+            'file' => 'required|file|max:102400',
             'folder_id' => 'nullable|exists:folders,id',
         ]);
 
         $file = $request->file('file');
         $user = Auth::user();
 
-        // Check if user has reached the local storage limit (50GB)
-        $localStorageLimit = 50 * 1024 * 1024 * 1024; // 50GB in bytes
+        $localStorageLimit = 50 * 1024 * 1024 * 1024;
         if ($user->local_storage_used + $file->getSize() > $localStorageLimit) {
             return redirect()->back()->with('error', 'Local storage limit reached (50GB). Please delete some files first.');
         }
@@ -143,22 +145,6 @@ class FileController extends Controller
         elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) { $type = 'Presentation'; }
         elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) { $type = 'Document'; }
 
-        // For auto-upload to IPFS, check if there's enough IPFS storage (uncomment if you want auto IPFS upload)
-        /*
-        $ipfsHash = null;
-        $ipfsUrl = null;
-
-        if ($user->hasEnoughIpfsStorage($file->getSize())) {
-            // Upload file to IPFS via Pinata
-            $pinataResult = $this->pinataService->uploadFile($file);
-
-            if ($pinataResult && isset($pinataResult['IpfsHash'])) {
-                $ipfsHash = $pinataResult['IpfsHash'];
-                $ipfsUrl = $this->pinataService->getGatewayUrl($ipfsHash);
-            }
-        }
-        */
-
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
             'original_name' => $file->getClientOriginalName(),
@@ -169,8 +155,8 @@ class FileController extends Controller
             'type' => $type,
             'folder_id' => $request->folder_id,
             'last_accessed' => now(),
-            'ipfs_hash' => null, // Set to $ipfsHash if auto-uploading to IPFS
-            'ipfs_url' => null,  // Set to $ipfsUrl if auto-uploading to IPFS
+            'ipfs_hash' => null,
+            'ipfs_url' => null,
         ]);
 
         return redirect()->back()->with('success', 'File uploaded successfully to local storage');
@@ -182,11 +168,9 @@ class FileController extends Controller
         if (Auth::id() !== $file->user_id) { abort(403); }
 
         if ($file->ipfs_hash && $file->ipfs_url) {
-            // Redirect to IPFS gateway URL
             return redirect($file->ipfs_url);
         }
 
-        // Fall back to local file if IPFS is not available
         $fullPath = storage_path('app/private/' . $file->path);
         if (!file_exists($fullPath)) { return response()->json(['error' => 'File not found'], 404); }
         $file->update(['last_accessed' => now()]);
@@ -211,7 +195,6 @@ class FileController extends Controller
         $file = File::findOrFail($id);
         if (Gate::denies('delete', $file)) { abort(403); }
 
-        // Move to trash instead of permanent deletion
         $file->update([
             'is_trashed' => true,
             'trashed_at' => now()

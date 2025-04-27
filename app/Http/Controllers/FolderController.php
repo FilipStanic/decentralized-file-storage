@@ -12,9 +12,6 @@ use Inertia\Inertia;
 
 class FolderController extends Controller
 {
-    /**
-     * Display a listing of folders and files in the specified folder.
-     */
     public function show($id = null)
     {
         $user = Auth::user();
@@ -24,13 +21,11 @@ class FolderController extends Controller
         if ($id) {
             $currentFolder = Folder::findOrFail($id);
 
-            if (Gate::denies('view', $currentFolder)) {
+            if ($currentFolder->is_trashed || Gate::denies('view', $currentFolder)) {
                 abort(403);
             }
 
-
             $currentFolder->update(['last_accessed' => now()]);
-
 
             $breadcrumbs = $currentFolder->path;
             $breadcrumbs[] = [
@@ -39,8 +34,8 @@ class FolderController extends Controller
             ];
         }
 
-
         $folders = $user->folders()
+            ->where('is_trashed', false)
             ->when($id, function ($query) use ($id) {
                 return $query->where('parent_id', $id);
             })
@@ -57,12 +52,12 @@ class FolderController extends Controller
                     'starred' => $folder->starred,
                     'shared' => $folder->share_count > 0,
                     'last_modified' => $folder->updated_at->diffForHumans(),
-                    'item_count' => $folder->files->count() + $folder->children->count(),
+                    'item_count' => $folder->files()->where('is_trashed', false)->count() + $folder->children()->where('is_trashed', false)->count(),
                 ];
             });
 
-
         $files = $user->files()
+            ->where('is_trashed', false)
             ->when($id, function ($query) use ($id) {
                 return $query->where('folder_id', $id);
             })
@@ -95,9 +90,6 @@ class FolderController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created folder in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -106,10 +98,8 @@ class FolderController extends Controller
             'color' => 'nullable|string|max:7',
         ]);
 
-
         if ($request->parent_id) {
             $parentFolder = Folder::findOrFail($request->parent_id);
-
             if (Gate::denies('update', $parentFolder)) {
                 abort(403);
             }
@@ -125,9 +115,6 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Folder created successfully');
     }
 
-    /**
-     * Update the specified folder in storage.
-     */
     public function update(Request $request, Folder $folder)
     {
         if (Gate::denies('update', $folder)) {
@@ -147,9 +134,6 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Folder updated successfully');
     }
 
-    /**
-     * Move files to a folder.
-     */
     public function moveFiles(Request $request, Folder $folder = null)
     {
         $request->validate([
@@ -157,11 +141,9 @@ class FolderController extends Controller
             'file_ids.*' => 'exists:files,id',
         ]);
 
-
         if ($folder && Gate::denies('addFiles', $folder)) {
             abort(403);
         }
-
 
         $files = File::whereIn('id', $request->file_ids)->get();
 
@@ -169,7 +151,6 @@ class FolderController extends Controller
             if ($file->user_id !== Auth::id()) {
                 abort(403);
             }
-
             $file->update([
                 'folder_id' => $folder ? $folder->id : null,
             ]);
@@ -178,9 +159,6 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Files moved successfully');
     }
 
-    /**
-     * Move folders to another folder.
-     */
     public function moveFolders(Request $request, Folder $targetFolder = null)
     {
         $request->validate([
@@ -188,11 +166,9 @@ class FolderController extends Controller
             'folder_ids.*' => 'exists:folders,id',
         ]);
 
-
         if ($targetFolder && Gate::denies('update', $targetFolder)) {
             abort(403);
         }
-
 
         $folders = Folder::whereIn('id', $request->folder_ids)->get();
 
@@ -200,7 +176,6 @@ class FolderController extends Controller
             if ($folder->user_id !== Auth::id()) {
                 abort(403);
             }
-
 
             if ($targetFolder && ($folder->id === $targetFolder->id ||
                     $folder->getAllChildren()->contains('id', $targetFolder->id))) {
@@ -215,9 +190,6 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Folders moved successfully');
     }
 
-    /**
-     * Toggle star status for a folder.
-     */
     public function toggleStar(Folder $folder)
     {
         if (Gate::denies('update', $folder)) {
@@ -230,16 +202,12 @@ class FolderController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Remove the specified folder from storage.
-     */
     public function destroy(Folder $folder)
     {
         if (Gate::denies('delete', $folder)) {
             abort(403, 'You do not have permission to delete this folder');
         }
 
-        // Move to trash instead of permanent deletion
         $folder->update([
             'is_trashed' => true,
             'trashed_at' => now()
@@ -248,12 +216,8 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Folder moved to trash');
     }
 
-    /**
-     * Recursively delete folder contents (helper method)
-     */
     private function deleteFolderContents(Folder $folder)
     {
-
         foreach ($folder->files as $file) {
             Storage::disk('private')->delete($file->path);
             $file->delete();
@@ -263,6 +227,5 @@ class FolderController extends Controller
             $this->deleteFolderContents($subfolder);
             $subfolder->delete();
         }
-
     }
 }
