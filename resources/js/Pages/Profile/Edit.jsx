@@ -3,6 +3,7 @@ import React from 'react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import UpdateProfilePictureForm from '@/Pages/Profile/UpdateProfilePictureForm';
 import DarkModeToggle from '@/Pages/Context/DarkModeToggle';
 
 export default function Edit({ auth, mustVerifyEmail, status }) {
@@ -41,6 +42,10 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                                 status={status}
                                 className="max-w-xl"
                             />
+                        </section>
+
+                        <section id="profile-picture">
+                            <UpdateProfilePictureForm auth={auth} className="max-w-xl" />
                         </section>
 
                         <section id="password">

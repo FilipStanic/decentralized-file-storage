@@ -15,10 +15,10 @@ export const WelcomeSection = ({
     return (
         <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
             <div className="text-center max-w-xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-                <div className="w-24 h-24 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
                     <span className="text-white text-4xl font-bold">B</span>
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                     Welcome to BlockStore
                 </h1>
 

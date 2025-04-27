@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Upload, Trash } from 'lucide-react';
+import { Database, Trash } from 'lucide-react';
 import axios from 'axios';
 
 const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }) => {
@@ -28,7 +28,6 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                 setError(errorMessage);
                 console.error('IPFS upload error:', error);
 
-                
                 if (error.response?.status === 403) {
                     setError('Permission denied. You may not have access to this file.');
                 }
@@ -39,9 +38,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
         setLoading(true);
         setError(null);
 
-        axios.post(route('ipfs.remove', fileId), {
-            _method: 'DELETE'
-        }, {
+        axios.post(route('ipfs.remove', fileId), {}, {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             }
@@ -59,7 +56,6 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                 setError(errorMessage);
                 console.error('IPFS removal error:', error);
 
-                
                 if (error.response?.status === 403) {
                     setError('Permission denied. You may not have access to this file.');
                 }

@@ -60,4 +60,23 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    public function updateProfilePicture(Request $request)
+    {
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($user->profile_picture) {
+            \Storage::disk('public')->delete($user->profile_picture);
+        }
+
+        $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+
+        $user->update(['profile_picture' => "/storage/{$path}"]);
+
+        return back()->with('success', 'Profile picture updated successfully.');
+    }
 }

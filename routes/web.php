@@ -74,6 +74,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::post('/profile/picture', [ProfileController::class, 'updateProfilePicture'])->name('profile.picture.update');
+});
+
 
 
 require __DIR__.'/auth.php';

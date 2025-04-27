@@ -54,7 +54,7 @@ class IPFSController extends Controller
         try {
             $file = File::findOrFail($id);
 
-            // Check if user owns this file or has permission
+            
             if (Auth::id() !== $file->user_id) {
                 return response()->json(['message' => 'You do not have permission to upload this file to IPFS'], 403);
             }
@@ -110,7 +110,7 @@ class IPFSController extends Controller
         try {
             $file = File::findOrFail($id);
 
-            // Check if user owns this file or has permission
+            
             if (Auth::id() !== $file->user_id) {
                 return response()->json(['message' => 'You do not have permission to remove this file from IPFS'], 403);
             }
