@@ -4,6 +4,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StarredController;
 use App\Http\Controllers\IPFSController;
+use App\Http\Controllers\TrashController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,6 @@ use App\Http\Controllers\SidebarController;
 
 
 Route::get('/', function () {
-
     $fileData = Auth::check() ? app(FileController::class)->index() : [
         'recentFiles' => [],
         'quickAccessFiles' => [],
@@ -25,6 +25,7 @@ Route::get('/', function () {
         ],
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'title' => 'Home',
     ], $fileData));
 })->name('home');
 
@@ -43,6 +44,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ipfs/upload/{id}', [IPFSController::class, 'uploadToIPFS'])->name('ipfs.upload');
     Route::delete('/ipfs/remove/{id}', [IPFSController::class, 'removeFromIPFS'])->name('ipfs.remove');
     Route::get('/storage/stats', [IPFSController::class, 'storageStats'])->name('storage.stats');
+
+    // Trash routes
+    Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
+    Route::post('/trash/move', [TrashController::class, 'moveToTrash'])->name('trash.move');
+    Route::post('/trash/restore', [TrashController::class, 'restore'])->name('trash.restore');
+    Route::post('/trash/empty', [TrashController::class, 'emptyTrash'])->name('trash.empty');
+    Route::delete('/trash/delete', [TrashController::class, 'permanentlyDelete'])->name('trash.delete');
 });
 
 

@@ -211,14 +211,13 @@ class FileController extends Controller
         $file = File::findOrFail($id);
         if (Gate::denies('delete', $file)) { abort(403); }
 
-        // Delete from IPFS/Pinata if hash exists
-        if ($file->ipfs_hash) {
-            $this->pinataService->unpin($file->ipfs_hash);
-        }
+        // Move to trash instead of permanent deletion
+        $file->update([
+            'is_trashed' => true,
+            'trashed_at' => now()
+        ]);
 
-        Storage::disk('private')->delete($file->path);
-        $file->delete();
-        return redirect()->back()->with('success', 'File deleted successfully');
+        return redirect()->back()->with('success', 'File moved to trash');
     }
 
     public function rename(Request $request, $id)

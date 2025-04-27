@@ -6,7 +6,6 @@ use App\Models\File;
 use App\Services\PinataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -44,25 +43,21 @@ class IPFSController extends Controller
             'storageStats' => [
                 'used' => $user->formatted_ipfs_storage_used,
                 'percentage' => $user->ipfs_storage_percentage,
-                'limit' => '1.00 GB',
+                'limit' => config('storage.ipfs_limit', '1.00 GB'),
             ]
         ]);
     }
 
-    public function uploadToIPFS($id)
+    public function uploadToIPFS(File $file)
     {
-        $file = File::findOrFail($id);
-        $user = Auth::user();
+        $this->authorize('update', $file);
 
-        if ($user->id !== $file->user_id) {
-            abort(403);
-        }
+        $user = Auth::user();
 
         if ($file->ipfs_hash) {
             return redirect()->back()->with('error', 'File is already on IPFS');
         }
 
-        // Check if user has enough storage remaining
         if (!$user->hasEnoughIpfsStorage($file->size)) {
             return redirect()->back()->with('error', 'IPFS storage limit exceeded. Your limit is 1GB.');
         }
@@ -81,44 +76,50 @@ class IPFSController extends Controller
             true
         );
 
-        $pinataResult = $this->pinataService->uploadFile($uploadedFile, $file->name);
+        try {
+            $pinataResult = $this->pinataService->uploadFile($uploadedFile, $file->name);
 
-        if ($pinataResult && isset($pinataResult['IpfsHash'])) {
-            $file->update([
-                'ipfs_hash' => $pinataResult['IpfsHash'],
-                'ipfs_url' => $this->pinataService->getGatewayUrl($pinataResult['IpfsHash']),
-            ]);
+            if (isset($pinataResult['IpfsHash'])) {
+                $file->update([
+                    'ipfs_hash' => $pinataResult['IpfsHash'],
+                    'ipfs_url' => $this->pinataService->getGatewayUrl($pinataResult['IpfsHash']),
+                ]);
 
-            return redirect()->back()->with('success', 'File uploaded to IPFS successfully');
+                return redirect()->back()->with('success', 'File uploaded to IPFS successfully');
+            }
+
+            return redirect()->back()->with('error', 'Failed to upload file to IPFS');
+        } catch (\Exception $e) {
+            Log::error('Pinata upload failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'An unexpected error occurred while uploading to IPFS.');
         }
-
-        return redirect()->back()->with('error', 'Failed to upload file to IPFS');
     }
 
-    public function removeFromIPFS($id)
+    public function removeFromIPFS(File $file)
     {
-        $file = File::findOrFail($id);
-
-        if (Auth::id() !== $file->user_id) {
-            abort(403);
-        }
+        $this->authorize('delete', $file);
 
         if (!$file->ipfs_hash) {
             return redirect()->back()->with('error', 'File is not on IPFS');
         }
 
-        $result = $this->pinataService->unpin($file->ipfs_hash);
+        try {
+            $result = $this->pinataService->unpin($file->ipfs_hash);
 
-        if ($result) {
-            $file->update([
-                'ipfs_hash' => null,
-                'ipfs_url' => null,
-            ]);
+            if ($result) {
+                $file->update([
+                    'ipfs_hash' => null,
+                    'ipfs_url' => null,
+                ]);
 
-            return redirect()->back()->with('success', 'File removed from IPFS successfully');
+                return redirect()->back()->with('success', 'File removed from IPFS successfully');
+            }
+
+            return redirect()->back()->with('error', 'Failed to remove file from IPFS');
+        } catch (\Exception $e) {
+            Log::error('Pinata unpin failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'An unexpected error occurred while removing from IPFS.');
         }
-
-        return redirect()->back()->with('error', 'Failed to remove file from IPFS');
     }
 
     public function storageStats()
@@ -129,12 +130,12 @@ class IPFSController extends Controller
             'ipfs' => [
                 'used' => $user->formatted_ipfs_storage_used,
                 'percentage' => $user->ipfs_storage_percentage,
-                'limit' => '1.00 GB'
+                'limit' => config('storage.ipfs_limit', '1.00 GB'),
             ],
             'local' => [
                 'used' => $user->formatted_local_storage_used,
                 'percentage' => $user->local_storage_percentage,
-                'limit' => '50.00 GB'
+                'limit' => config('storage.local_limit', '50.00 GB'),
             ]
         ]);
     }

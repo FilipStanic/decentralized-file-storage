@@ -25,12 +25,16 @@ class File extends Model
         'last_accessed',
         'ipfs_hash',
         'ipfs_url',
+        'is_trashed',
+        'trashed_at',
     ];
 
     protected $casts = [
         'size' => 'integer',
         'starred' => 'boolean',
         'last_accessed' => 'datetime',
+        'is_trashed' => 'boolean',
+        'trashed_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -80,5 +84,25 @@ class File extends Model
     public function getIsOnIpfsAttribute(): bool
     {
         return !empty($this->ipfs_hash);
+    }
+
+    public function scopeNotTrashed($query)
+    {
+        return $query->where('is_trashed', false);
+    }
+
+    public function scopeTrashed($query)
+    {
+        return $query->where('is_trashed', true);
+    }
+
+    public function getTimeUntilPermanentDeletionAttribute()
+    {
+        if (!$this->is_trashed || !$this->trashed_at) {
+            return null;
+        }
+
+        $deleteAt = $this->trashed_at->addHours(24);
+        return $deleteAt->diffForHumans(now());
     }
 }

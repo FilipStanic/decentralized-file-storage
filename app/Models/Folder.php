@@ -18,49 +18,38 @@ class Folder extends Model
         'name',
         'color',
         'starred',
+        'is_trashed',
+        'trashed_at',
         'last_accessed',
     ];
 
     protected $casts = [
         'starred' => 'boolean',
+        'is_trashed' => 'boolean',
+        'trashed_at' => 'datetime',
         'last_accessed' => 'datetime',
     ];
 
-    /**
-     * Get the user that owns the folder.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the parent folder.
-     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Folder::class, 'parent_id');
     }
 
-    /**
-     * Get the child folders.
-     */
     public function children(): HasMany
     {
         return $this->hasMany(Folder::class, 'parent_id');
     }
 
-    /**
-     * Get all files in this folder.
-     */
     public function files(): HasMany
     {
         return $this->hasMany(File::class);
     }
 
-    /**
-     * Get the users with whom this folder is shared.
-     */
     public function sharedWith(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'folder_shares')
@@ -68,25 +57,16 @@ class Folder extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Check if the folder is shared.
-     */
     public function getIsSharedAttribute(): bool
     {
         return $this->sharedWith()->count() > 0;
     }
 
-    /**
-     * Get the count of users this folder is shared with.
-     */
     public function getShareCountAttribute(): int
     {
         return $this->sharedWith()->count();
     }
 
-    /**
-     * Get the path to this folder (array of parent folders).
-     */
     public function getPathAttribute(): array
     {
         $path = [];
@@ -103,9 +83,6 @@ class Folder extends Model
         return $path;
     }
 
-    /**
-     * Get all subfolders recursively.
-     */
     public function getAllChildren()
     {
         $children = $this->children;
@@ -115,5 +92,33 @@ class Folder extends Model
         }
 
         return $children;
+    }
+
+    public function scopeNotTrashed($query)
+    {
+        return $query->where('is_trashed', false);
+    }
+
+    public function scopeTrashed($query)
+    {
+        return $query->where('is_trashed', true);
+    }
+
+    public function getTimeUntilPermanentDeletionAttribute()
+    {
+        if (!$this->is_trashed || !$this->trashed_at) {
+            return null;
+        }
+
+        $deleteAt = $this->trashed_at->addHours(24);
+        return $deleteAt->diffForHumans(now());
+    }
+
+    public function getTrashedItemCount()
+    {
+        $fileCount = $this->files()->count();
+        $folderCount = $this->getAllChildren()->count();
+
+        return $fileCount + $folderCount;
     }
 }

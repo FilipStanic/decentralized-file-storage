@@ -235,13 +235,17 @@ class FolderController extends Controller
      */
     public function destroy(Folder $folder)
     {
-
         if (Gate::denies('delete', $folder)) {
             abort(403, 'You do not have permission to delete this folder');
         }
-        $this->deleteFolderContents($folder);
-        $folder->delete();
-        return redirect()->back()->with('success', 'Folder deleted successfully');
+
+        // Move to trash instead of permanent deletion
+        $folder->update([
+            'is_trashed' => true,
+            'trashed_at' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'Folder moved to trash');
     }
 
     /**

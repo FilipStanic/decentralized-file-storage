@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image } from 'lucide-react';
+import { ChevronRight, FilePlus, Plus, MoreHorizontal, Download, Star, Trash2, File, FileText, Image, FolderIcon, Info } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
@@ -8,6 +8,7 @@ import UploadModal from '@/Pages/UploadModal';
 import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
 import FolderItem from '@/Pages/Folders/FolderItem.jsx';
 import { useSearch } from '@/Pages/Context/SearchContext.jsx';
+import FileDetailModal from '@/Pages/Files/FileDetailModal.jsx';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -52,16 +53,16 @@ const FolderBreadcrumb = ({ breadcrumbs = [] }) => {
 
 export default function FolderView({ auth, currentFolder, breadcrumbs, folders, files }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedFileId, setSelectedFileId] = useState(null); 
+    const [selectedFileId, setSelectedFileId] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
-    
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
-    
 
     const { searchTerm, isSearching } = useSearch();
 
@@ -70,19 +71,17 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [totalResults, setTotalResults] = useState(0);
 
     const fileInputRef = useRef(null);
-    const dropdownRef = useRef(null); 
+    const dropdownRef = useRef(null);
     const isAuthenticated = auth && auth.user;
 
-    
     const [data, setData] = useState({ file: null });
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [progress, setProgress] = useState(null);
 
-    
     useEffect(() => {
         setLoadingDestinations(true);
-        axios.get(route('sidebar.data')) 
+        axios.get(route('sidebar.data'))
             .then(response => {
                 const currentFolderId = currentFolder ? currentFolder.id : null;
                 setDestinationFolders(
@@ -94,27 +93,23 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 console.error('Error fetching destination folders:', error);
                 setLoadingDestinations(false);
             });
-    }, [currentFolder]); 
-    
+    }, [currentFolder]);
 
-    
+
     useEffect(() => {
         function handleClickOutside(event) {
-            
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
-                setSelectedFileId(null); 
+                setSelectedFileId(null);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [dropdownRef]); 
-    
+    }, [dropdownRef]);
 
 
-    
     useEffect(() => {
         if (!searchTerm.trim()) {
             setFilteredFolders(folders);
@@ -130,7 +125,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         setTotalResults(matchingFolders.length + matchingFiles.length);
     }, [searchTerm, folders, files]);
 
-    
     const handleMoveFile = (fileId, folderId) => {
         console.log(`Attempting to move file ID: ${fileId} to folder ID: ${folderId === null ? 'Root' : folderId}`);
 
@@ -153,12 +147,11 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 alert('Error moving file: Could not send request.');
             }
         }).finally(() => {
-            
             setDropdownOpen(false);
             setSelectedFileId(null);
         });
     };
-    
+
 
     const handleUpload = () => setShowUploadModal(true);
     const handleNewFolder = () => setShowFolderModal(true);
@@ -167,8 +160,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const handleFileChange = (e) => {
         if (e.target.files.length > 0) {
             setData({ ...data, file: e.target.files[0] });
-            
-            
         }
     };
 
@@ -182,15 +173,14 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         e.preventDefault(); e.stopPropagation(); setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             setData({ ...data, file: e.dataTransfer.files[0] });
-            setShowUploadModal(true); 
+            setShowUploadModal(true);
         }
     };
 
-    
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
         if (!data.file) return;
-        setProcessing(true); setProgress(0); 
+        setProcessing(true); setProgress(0);
 
         const formData = new FormData();
         formData.append('file', data.file);
@@ -204,20 +194,19 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             }
         }).then(() => {
             setShowUploadModal(false); setData({ file: null }); setProgress(null);
-            window.location.reload(); 
+            window.location.reload();
         }).catch(error => {
             if (error.response && error.response.data.errors) {
                 setErrors(error.response.data.errors);
             } else {
                 console.error("Upload error:", error);
-                setErrors({ file: "Upload failed. Please try again." }); 
+                setErrors({ file: "Upload failed. Please try again." });
             }
         }).finally(() => {
             setProcessing(false);
         });
     };
 
-    
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
         if (currentFolder) folderData.parent_id = currentFolder.id;
@@ -225,18 +214,16 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         axios.post(route('folders.store'), folderData)
             .then(() => {
                 setShowFolderModal(false);
-                window.location.reload(); 
+                window.location.reload();
             })
             .catch(error => {
                 console.error('Error creating folder:', error);
-                
             })
             .finally(() => {
                 setProcessingFolder(false);
             });
     };
 
-    
     const toggleDropdown = (fileId) => {
         if (selectedFileId === fileId && dropdownOpen) {
             setDropdownOpen(false);
@@ -246,7 +233,11 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             setDropdownOpen(true);
         }
     };
-    
+
+    const handleShowDetails = (file) => {
+        setSelectedFile(file);
+        setShowDetailModal(true);
+    };
 
     return (
         <>
@@ -283,7 +274,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                         </div>
                     </div>
 
-                    {filteredFolders.length > 0 && !isSearching && ( 
+                    {filteredFolders.length > 0 && !isSearching && (
                         <div className="mb-8">
                             <h2 className="text-lg font-medium mb-4 dark:text-white">Folders</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -296,7 +287,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     <div>
                         <h2 className="text-lg font-medium mb-4 dark:text-white">Files</h2>
                         {filteredFiles.length > 0 ? (
-                            
                             <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                                 <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                                     <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
@@ -305,14 +295,26 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                     <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
                                 </div>
                                 {filteredFiles.map((file) => (
-                                    <div key={file.id} className="grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm items-center"> {/* Added items-center */}
-                                        <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden"> {/* Added overflow-hidden */}
+                                    <div key={file.id} className="grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm items-center">
+                                        <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden">
                                             <div className="flex-shrink-0">{getFileIcon(file.type)}</div>
                                             <span className="truncate dark:text-white">{file.name}</span>
+                                            {file.ipfs_hash && (
+                                                <span className="text-xs text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full ml-1">
+                                                    IPFS
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">{file.size}</div>
                                         <div className="col-span-2 md:col-span-2 hidden md:flex items-center text-gray-600 dark:text-gray-400">{file.lastModified}</div>
                                         <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1">
+                                            <button
+                                                onClick={() => handleShowDetails(file)}
+                                                className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                                title="File Details"
+                                            >
+                                                <Info size={18} />
+                                            </button>
                                             <Link onClick={() => window.location.href = route('files.download', file.id)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded">
                                                 <Download size={18} />
                                             </Link>
@@ -321,7 +323,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                             </Link>
                                             <div className="relative">
                                                 <button
-                                                    onClick={() => toggleDropdown(file.id)} 
+                                                    onClick={() => toggleDropdown(file.id)}
                                                     className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                                                 >
                                                     <MoreHorizontal size={18} />
@@ -386,6 +388,11 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 onSubmit={handleCreateFolder}
                 processing={processingFolder}
                 parentId={currentFolder ? currentFolder.id : null}
+            />
+            <FileDetailModal
+                isOpen={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+                file={selectedFile}
             />
         </>
     );

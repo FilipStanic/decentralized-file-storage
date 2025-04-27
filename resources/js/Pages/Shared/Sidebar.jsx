@@ -1,19 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X, Database } from 'lucide-react';
-import StorageIndicator from '@/Pages/StorageIndicator.jsx'
+import StorageIndicator from '@/Pages/StorageIndicator';
 
 export const Sidebar = ({ expanded, onCreateNew }) => {
     const { sharedSidebarFolders = [] } = usePage().props;
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    // Load folder section state from localStorage on component mount
+    useEffect(() => {
+        const savedState = localStorage.getItem('folderSectionOpen');
+        if (savedState !== null) {
+            setFolderSectionOpen(savedState === 'true');
+        }
+    }, []);
+
+    // Determine if the current route matches
     const isCurrentRoute = (routeName) => {
         return route().current(routeName);
     };
 
     const toggleFolderSection = () => {
-        setFolderSectionOpen(!folderSectionOpen);
+        const newState = !folderSectionOpen;
+        setFolderSectionOpen(newState);
+        // Save state to localStorage
+        localStorage.setItem('folderSectionOpen', newState.toString());
     };
 
     const toggleMobileSidebar = () => {
@@ -145,12 +157,16 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
 
                 <div className="mt-2">
                     <Link
-                        href="#"
-                        className="px-4 py-2 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        href={route('trash.index')}
+                        className={`px-4 py-2 flex items-center gap-2 rounded-md ${
+                            isCurrentRoute('trash.index')
+                                ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
                         onClick={() => setMobileOpen(false)}
                     >
                         <Trash2 size={18} className="text-gray-500" />
-                        <span className="text-gray-800 dark:text-gray-200">Trash</span>
+                        <span>Trash</span>
                     </Link>
                     <Link
                         href={route('profile.edit')}
