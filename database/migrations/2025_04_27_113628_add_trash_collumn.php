@@ -8,13 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Add trashed columns to files table
+        
         Schema::table('files', function (Blueprint $table) {
             $table->boolean('is_trashed')->default(false)->after('ipfs_url');
             $table->timestamp('trashed_at')->nullable()->after('is_trashed');
         });
 
-        // Add trashed columns to folders table
+        
         Schema::table('folders', function (Blueprint $table) {
             $table->boolean('is_trashed')->default(false)->after('starred');
             $table->timestamp('trashed_at')->nullable()->after('is_trashed');

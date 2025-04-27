@@ -36,16 +36,15 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
 
-    // Add the starred route
+
     Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
 
-    // IPFS routes
     Route::get('/ipfs', [IPFSController::class, 'index'])->name('ipfs.index');
     Route::post('/ipfs/upload/{id}', [IPFSController::class, 'uploadToIPFS'])->name('ipfs.upload');
-    Route::delete('/ipfs/remove/{id}', [IPFSController::class, 'removeFromIPFS'])->name('ipfs.remove');
+    Route::post('/ipfs/remove/{id}', [IPFSController::class, 'removeFromIPFS'])->name('ipfs.remove');
     Route::get('/storage/stats', [IPFSController::class, 'storageStats'])->name('storage.stats');
 
-    // Trash routes
+
     Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
     Route::post('/trash/move', [TrashController::class, 'moveToTrash'])->name('trash.move');
     Route::post('/trash/restore', [TrashController::class, 'restore'])->name('trash.restore');

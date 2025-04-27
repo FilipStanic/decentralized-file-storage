@@ -3,11 +3,10 @@ import { Link, usePage } from '@inertiajs/react';
 import { Plus, FolderIcon, Clock, Star, Trash2, Settings, ChevronDown, ChevronRight, Menu, X, Database } from 'lucide-react';
 import StorageIndicator from '@/Pages/StorageIndicator';
 
-export const Sidebar = ({ expanded, onCreateNew }) => {
+export default function Sidebar({ expanded, onCreateNew }) {
     const { sharedSidebarFolders = [] } = usePage().props;
     const [folderSectionOpen, setFolderSectionOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
-
 
     useEffect(() => {
         const savedState = localStorage.getItem('folderSectionOpen');
@@ -16,7 +15,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
         }
     }, []);
 
-
     const isCurrentRoute = (routeName) => {
         return route().current(routeName);
     };
@@ -24,7 +22,6 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
     const toggleFolderSection = () => {
         const newState = !folderSectionOpen;
         setFolderSectionOpen(newState);
-
         localStorage.setItem('folderSectionOpen', newState.toString());
     };
 
@@ -204,7 +201,7 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
                 onClick={() => setMobileOpen(false)}
             ></div>
             <div
-                className={`fixed top-0 left-0 h-full z-40 lg:static lg:h-screen w-64 lg:w-60 border-r dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800 transform transition-transform duration-200 ease-in-out ${
+                className={`fixed top-0 left-0 h-full z-40 lg:static lg:h-screen w-72 lg:w-72 border-r dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800 transform transition-transform duration-200 ease-in-out ${
                     mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                 }`}
             >
@@ -212,6 +209,4 @@ export const Sidebar = ({ expanded, onCreateNew }) => {
             </div>
         </>
     );
-};
-
-export default Sidebar;
+}

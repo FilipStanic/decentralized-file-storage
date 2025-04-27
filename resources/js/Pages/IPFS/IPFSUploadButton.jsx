@@ -10,28 +10,10 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
         setLoading(true);
         setError(null);
 
-        axios.post(route('ipfs.upload', fileId))
-            .then(response => {
-                setLoading(false);
-                if (onSuccess && typeof onSuccess === 'function') {
-                    onSuccess(response.data);
-                }
-                window.location.reload();
-            })
-            .catch(error => {
-                setLoading(false);
-                setError(error.response?.data?.message || 'Failed to upload to IPFS');
-                console.error('IPFS upload error:', error);
-            });
-    };
-
-    const removeFromIPFS = () => {
-        setLoading(true);
-        setError(null);
-
-
-        axios.post(route('ipfs.remove', fileId), {
-            _method: 'DELETE'
+        axios.post(route('ipfs.upload', fileId), {}, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
         })
             .then(response => {
                 setLoading(false);
@@ -42,11 +24,47 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
             })
             .catch(error => {
                 setLoading(false);
-                setError(error.response?.data?.message || 'Failed to remove from IPFS');
-                console.error('IPFS removal error:', error);
+                const errorMessage = error.response?.data?.message || 'Failed to upload to IPFS';
+                setError(errorMessage);
+                console.error('IPFS upload error:', error);
+
+                
+                if (error.response?.status === 403) {
+                    setError('Permission denied. You may not have access to this file.');
+                }
             });
     };
 
+    const removeFromIPFS = () => {
+        setLoading(true);
+        setError(null);
+
+        axios.post(route('ipfs.remove', fileId), {
+            _method: 'DELETE'
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        })
+            .then(response => {
+                setLoading(false);
+                if (onSuccess && typeof onSuccess === 'function') {
+                    onSuccess(response.data);
+                }
+                window.location.reload();
+            })
+            .catch(error => {
+                setLoading(false);
+                const errorMessage = error.response?.data?.message || 'Failed to remove from IPFS';
+                setError(errorMessage);
+                console.error('IPFS removal error:', error);
+
+                
+                if (error.response?.status === 403) {
+                    setError('Permission denied. You may not have access to this file.');
+                }
+            });
+    };
 
     const sizes = {
         small: {
@@ -71,7 +89,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                 <button
                     onClick={removeFromIPFS}
                     disabled={loading}
-                    className={`flex items-center gap-1 ${sizeClass.button} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors`}
+                    className={`flex items-center gap-1 ${sizeClass.button} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50`}
                     title="Remove from IPFS"
                 >
                     {loading ? (
@@ -81,7 +99,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                     )}
                     <span>Remove from IPFS</span>
                 </button>
-                {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+                {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
             </div>
         );
     }
@@ -91,7 +109,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
             <button
                 onClick={uploadToIPFS}
                 disabled={loading}
-                className={`flex items-center gap-1 ${sizeClass.button} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors`}
+                className={`flex items-center gap-1 ${sizeClass.button} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50`}
                 title="Upload to IPFS"
             >
                 {loading ? (
@@ -101,7 +119,7 @@ const IPFSUploadButton = ({ fileId, isOnIPFS, onSuccess, buttonSize = 'normal' }
                 )}
                 <span>Upload to IPFS</span>
             </button>
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+            {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
         </div>
     );
 };

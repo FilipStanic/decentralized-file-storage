@@ -1,21 +1,51 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { FolderIcon, Star, Trash2, Pencil } from 'lucide-react'; // Added Pencil
+import { router } from '@inertiajs/core';
+import { FolderIcon, Star, Trash2, Pencil } from 'lucide-react';
 import DeleteFolderModal from './DeleteFolderModal.jsx';
-import axios from 'axios'; // Added axios import
+import axios from 'axios';
 
-const FolderItem = ({ folder, onRenameClick }) => { // Added onRenameClick prop
+const FolderItem = ({ folder, onRenameClick }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isStarred, setIsStarred] = useState(folder?.starred || false);
+    const [deleting, setDeleting] = useState(false);
 
-    // Function to handle star toggle without full page reload (optional improvement)
     const handleToggleStar = (e) => {
         e.preventDefault();
+        e.stopPropagation();
+
+        if (deleting) return; 
+
+        
+        setIsStarred(prev => !prev);
+
         axios.post(route('folders.toggle-star', folder.id))
-            .then(() => {
-                // Ideally use Inertia partial reload here if star status affects other props
-                router.reload({ only: ['folders', 'quickAccessFiles'], preserveScroll: true, preserveState: true });
+            .then(response => {
+                if (response.data && typeof response.data.starred !== 'undefined') {
+                    setIsStarred(response.data.starred);
+                }
             })
-            .catch(error => console.error('Error toggling star:', error));
+            .catch(error => {
+                console.error('Error toggling star:', error);
+                
+                setIsStarred(folder.starred);
+            });
+    };
+
+
+
+    const handleShowDeleteModal = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowDeleteModal(true);
+    };
+
+    const handleRename = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof onRenameClick === 'function') {
+            onRenameClick(folder);
+        }
     };
 
     return (
@@ -27,28 +57,27 @@ const FolderItem = ({ folder, onRenameClick }) => { // Added onRenameClick prop
                             <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />
                         </div>
                     </Link>
-                    {/* Action Icons */}
-                    <div className="flex items-center space-x-0.5"> {/* Reduced space */}
-                         <button
-                             onClick={() => onRenameClick(folder)} // Call passed prop
-                             className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                             title="Rename Folder"
-                         >
-                             <Pencil size={18} />
-                         </button>
+                    <div className="flex items-center space-x-0.5">
                         <button
-                            onClick={handleToggleStar} // Use handler
+                            onClick={handleRename}
+                            className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title="Rename Folder"
+                        >
+                            <Pencil size={18} />
+                        </button>
+                        <button
+                            onClick={handleToggleStar}
                             className="text-gray-400 hover:text-yellow-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title={folder.starred ? "Unstar" : "Star"}
+                            title={isStarred ? "Unstar" : "Star"}
                         >
                             <Star
                                 size={18}
-                                fill={folder.starred ? "currentColor" : "none"}
-                                className={folder.starred ? "text-yellow-400" : ""}
+                                fill={isStarred ? "currentColor" : "none"}
+                                className={isStarred ? "text-yellow-400" : ""}
                             />
                         </button>
                         <button
-                            onClick={() => setShowDeleteModal(true)}
+                            onClick={handleShowDeleteModal}
                             className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                             title="Delete Folder"
                         >
@@ -64,13 +93,18 @@ const FolderItem = ({ folder, onRenameClick }) => { // Added onRenameClick prop
                 </Link>
             </div>
 
-            <DeleteFolderModal
-                isOpen={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                folder={folder}
-            />
+            {showDeleteModal && (
+                <DeleteFolderModal
+                    isOpen={showDeleteModal}
+                    onClose={() => setShowDeleteModal(false)}
+                    folder={folder}
+                    onDeleteStart={() => setDeleting(true)}
+                    onDeleteComplete={() => setDeleting(false)}
+                />
+            )}
         </>
     );
 };
+
 
 export default FolderItem;

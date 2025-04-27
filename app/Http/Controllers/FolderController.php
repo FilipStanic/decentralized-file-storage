@@ -196,10 +196,9 @@ class FolderController extends Controller
             abort(403);
         }
 
-        $folder->timestamps = false;
         $folder->update(['starred' => !$folder->starred]);
 
-        return redirect()->back();
+        return response()->json(['success' => true, 'starred' => $folder->fresh()->starred]);
     }
 
     public function destroy(Folder $folder)

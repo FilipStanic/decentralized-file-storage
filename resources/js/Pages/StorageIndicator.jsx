@@ -13,7 +13,6 @@ const StorageIndicator = () => {
         const fetchStorageData = async () => {
             try {
                 const { data } = await axios.get(route('storage.stats'));
-                // assume data comes back shaped like { local: {…}, ipfs: {…} }
                 setStorageData(data);
             } catch (e) {
                 console.error(e);
@@ -33,10 +32,14 @@ const StorageIndicator = () => {
         return 'bg-red-600';
     };
 
+    
+    const getVisiblePercentage = (percentage) => {
+        return percentage <= 0 ? 0.5 : Math.max(0.5, percentage);
+    };
+
     if (loading) {
         return (
             <div className="p-4 border-t dark:border-gray-700 space-y-4">
-                {/* Local skeleton */}
                 <div>
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1 h-5">
                         <div className="flex items-center">
@@ -48,7 +51,6 @@ const StorageIndicator = () => {
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 animate-pulse" />
                 </div>
 
-                {/* IPFS skeleton */}
                 <div>
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1 h-5">
                         <div className="flex items-center">
@@ -65,54 +67,51 @@ const StorageIndicator = () => {
 
     return (
         <div className="mt-auto p-4 border-t dark:border-gray-700 space-y-4">
-            {/* Local Storage */}
             <div>
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    <div className="flex items-center">
-                        <HardDrive size={14} className="mr-1" />
+                    <div className="flex items-center gap-1">
+                        <HardDrive size={14} />
                         <span>Local Storage</span>
                     </div>
-                    <span className="whitespace-nowrap">
-            {storageData.local.used} of {storageData.local.limit}
-          </span>
+                    <span className="whitespace-nowrap ml-2">
+                        <span className="mr-1">{storageData.local.used}</span>of<span className="ml-1">{storageData.local.limit}</span>
+                    </span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                     <div
                         className={`h-2 rounded-full ${getProgressColor(storageData.local.percentage)} transition-all duration-300`}
-                        style={{ width: `${storageData.local.percentage}%` }}
+                        style={{ width: `${getVisiblePercentage(storageData.local.percentage)}%` }}
                     />
                 </div>
             </div>
 
-            {/* IPFS Storage */}
             <div>
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    <div className="flex items-center">
-                        <Database size={14} className="mr-1" />
+                    <div className="flex items-center gap-1">
+                        <Database size={14} />
                         <span>IPFS Storage</span>
                     </div>
-                    <span className="whitespace-nowrap">
-            {storageData.ipfs.used} of {storageData.ipfs.limit}
-          </span>
+                    <span className="whitespace-nowrap ml-2">
+                        <span className="mr-1">{storageData.ipfs.used}</span>of<span className="ml-1">{storageData.ipfs.limit}</span>
+                    </span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                     <div
                         className={`h-2 rounded-full ${getProgressColor(storageData.ipfs.percentage)} transition-all duration-300`}
-                        style={{ width: `${storageData.ipfs.percentage}%` }}
+                        style={{ width: `${getVisiblePercentage(storageData.ipfs.percentage)}%` }}
                     />
                 </div>
                 {storageData.ipfs.percentage >= 70 && (
                     <div className="mt-2 text-xs text-right">
-            <span className={storageData.ipfs.percentage >= 90 ? 'text-red-500' : 'text-amber-500'}>
-              {storageData.ipfs.percentage >= 90
-                  ? 'IPFS storage almost full!'
-                  : 'IPFS storage usage is high'}
-            </span>
+                        <span className={storageData.ipfs.percentage >= 90 ? 'text-red-500' : 'text-amber-500'}>
+                            {storageData.ipfs.percentage >= 90
+                                ? 'IPFS storage almost full!'
+                                : 'IPFS storage usage is high'}
+                        </span>
                     </div>
                 )}
             </div>
 
-            {/* Global Upgrade Link */}
             <div className="pt-2 text-right">
                 <a href="#" className="text-indigo-600 dark:text-indigo-400 hover:underline">
                     Upgrade

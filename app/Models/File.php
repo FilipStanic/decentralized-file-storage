@@ -37,6 +37,16 @@ class File extends Model
         'trashed_at' => 'datetime',
     ];
 
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'id';
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

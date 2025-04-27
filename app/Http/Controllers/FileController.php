@@ -93,7 +93,11 @@ class FileController extends Controller
                     ];
                 });
 
-            $quickAccessItems = $quickAccessFiles->merge($starredFolders)
+            // Convert collections to arrays before merging
+            $quickAccessItems = collect(array_merge(
+                $quickAccessFiles->toArray(),
+                $starredFolders->toArray()
+            ))
                 ->filter(fn($item) => isset($item['date']) && isset($item['starred']))
                 ->sortByDesc('starred')
                 ->sortByDesc('date')
@@ -114,7 +118,9 @@ class FileController extends Controller
         }
     }
 
-    public function store(Request $request)
+
+
+public function store(Request $request)
     {
         $request->validate([
             'file' => 'required|file|max:102400',
@@ -192,15 +198,27 @@ class FileController extends Controller
 
     public function destroy($id)
     {
-        $file = File::findOrFail($id);
-        if (Gate::denies('delete', $file)) { abort(403); }
+        try {
+            $file = File::findOrFail($id);
 
-        $file->update([
-            'is_trashed' => true,
-            'trashed_at' => now()
-        ]);
+            if (Gate::denies('delete', $file)) {
+                abort(403);
+            }
 
-        return redirect()->back()->with('success', 'File moved to trash');
+            $file->update([
+                'is_trashed' => true,
+                'trashed_at' => now()
+            ]);
+
+            return redirect()->back()->with('success', 'File moved to trash');
+        } catch (\Exception $e) {
+            Log::error('Error in FileController@destroy', [
+                'message' => $e->getMessage(),
+                'trace_snippet' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Could not move file to trash. Please try again.');
+        }
     }
 
     public function rename(Request $request, $id)

@@ -7,6 +7,7 @@ use App\Services\PinataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class IPFSController extends Controller
@@ -48,35 +49,39 @@ class IPFSController extends Controller
         ]);
     }
 
-    public function uploadToIPFS(File $file)
+    public function uploadToIPFS($id)
     {
-        $this->authorize('update', $file);
-
-        $user = Auth::user();
-
-        if ($file->ipfs_hash) {
-            return redirect()->back()->with('error', 'File is already on IPFS');
-        }
-
-        if (!$user->hasEnoughIpfsStorage($file->size)) {
-            return redirect()->back()->with('error', 'IPFS storage limit exceeded. Your limit is 1GB.');
-        }
-
-        $localPath = storage_path('app/private/' . $file->path);
-
-        if (!file_exists($localPath)) {
-            return redirect()->back()->with('error', 'Local file not found');
-        }
-
-        $uploadedFile = new \Illuminate\Http\UploadedFile(
-            $localPath,
-            $file->original_name,
-            $file->mime_type,
-            null,
-            true
-        );
-
         try {
+            $file = File::findOrFail($id);
+
+            // Check if user owns this file or has permission
+            if (Auth::id() !== $file->user_id) {
+                return response()->json(['message' => 'You do not have permission to upload this file to IPFS'], 403);
+            }
+
+            if ($file->ipfs_hash) {
+                return response()->json(['message' => 'File is already on IPFS'], 400);
+            }
+
+            $user = Auth::user();
+            if (!$user->hasEnoughIpfsStorage($file->size)) {
+                return response()->json(['message' => 'IPFS storage limit exceeded. Your limit is 1GB.'], 400);
+            }
+
+            $localPath = storage_path('app/private/' . $file->path);
+
+            if (!file_exists($localPath)) {
+                return response()->json(['message' => 'Local file not found'], 404);
+            }
+
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $localPath,
+                $file->original_name,
+                $file->mime_type,
+                null,
+                true
+            );
+
             $pinataResult = $this->pinataService->uploadFile($uploadedFile, $file->name);
 
             if (isset($pinataResult['IpfsHash'])) {
@@ -85,25 +90,35 @@ class IPFSController extends Controller
                     'ipfs_url' => $this->pinataService->getGatewayUrl($pinataResult['IpfsHash']),
                 ]);
 
-                return redirect()->back()->with('success', 'File uploaded to IPFS successfully');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'File uploaded to IPFS successfully',
+                    'ipfs_hash' => $pinataResult['IpfsHash'],
+                    'ipfs_url' => $this->pinataService->getGatewayUrl($pinataResult['IpfsHash'])
+                ]);
             }
 
-            return redirect()->back()->with('error', 'Failed to upload file to IPFS');
+            return response()->json(['message' => 'Failed to upload file to IPFS'], 500);
         } catch (\Exception $e) {
-            Log::error('Pinata upload failed', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'An unexpected error occurred while uploading to IPFS.');
+            Log::error('Pinata upload failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['message' => 'An unexpected error occurred while uploading to IPFS.'], 500);
         }
     }
 
-    public function removeFromIPFS(File $file)
+    public function removeFromIPFS($id)
     {
-        $this->authorize('delete', $file);
-
-        if (!$file->ipfs_hash) {
-            return redirect()->back()->with('error', 'File is not on IPFS');
-        }
-
         try {
+            $file = File::findOrFail($id);
+
+            // Check if user owns this file or has permission
+            if (Auth::id() !== $file->user_id) {
+                return response()->json(['message' => 'You do not have permission to remove this file from IPFS'], 403);
+            }
+
+            if (!$file->ipfs_hash) {
+                return response()->json(['message' => 'File is not on IPFS'], 400);
+            }
+
             $result = $this->pinataService->unpin($file->ipfs_hash);
 
             if ($result) {
@@ -112,13 +127,16 @@ class IPFSController extends Controller
                     'ipfs_url' => null,
                 ]);
 
-                return redirect()->back()->with('success', 'File removed from IPFS successfully');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'File removed from IPFS successfully'
+                ]);
             }
 
-            return redirect()->back()->with('error', 'Failed to remove file from IPFS');
+            return response()->json(['message' => 'Failed to remove file from IPFS'], 500);
         } catch (\Exception $e) {
-            Log::error('Pinata unpin failed', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'An unexpected error occurred while removing from IPFS.');
+            Log::error('Pinata unpin failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['message' => 'An unexpected error occurred while removing from IPFS.'], 500);
         }
     }
 

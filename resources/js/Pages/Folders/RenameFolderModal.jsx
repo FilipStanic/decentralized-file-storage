@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FolderIcon, X } from 'lucide-react';
-import { router } from '@inertiajs/core'; // Or useForm if you prefer
+import { router } from '@inertiajs/core'; 
 
 const RenameFolderModal = ({ isOpen, onClose, folder }) => {
     const [folderName, setFolderName] = useState('');
@@ -12,13 +12,13 @@ const RenameFolderModal = ({ isOpen, onClose, folder }) => {
         '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280',
     ];
 
-    // Initialize state when the modal opens or the folder prop changes
+    
     useEffect(() => {
         if (isOpen && folder) {
             setFolderName(folder.name || '');
-            setFolderColor(folder.color || '#6366F1'); // Default color if none exists
+            setFolderColor(folder.color || '#6366F1'); 
         } else if (!isOpen) {
-            setFolderName(''); // Reset on close
+            setFolderName(''); 
             setFolderColor('');
         }
     }, [isOpen, folder]);
@@ -29,18 +29,18 @@ const RenameFolderModal = ({ isOpen, onClose, folder }) => {
 
         setProcessing(true);
 
-        // Use router.put or router.patch for updates
-        router.put(route('folders.update', folder.id), { // Assuming you have a folders.update route
+        
+        router.put(route('folders.update', folder.id), { 
             name: folderName,
             color: folderColor,
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                onClose(); // Close modal on success
+                onClose(); 
             },
             onError: (errors) => {
                 console.error('Error renaming folder:', errors);
-                // Optionally display errors to the user
+                
                  alert('Failed to rename folder. Please check the name and try again.');
             },
             onFinish: () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { router } from '@inertiajs/core';
 import { Download, Star, Trash2, File, FileText, Image, FolderIcon, MoreHorizontal, Info } from 'lucide-react';
 import axios from 'axios';
@@ -24,6 +24,7 @@ const getFileIcon = (type) => {
 };
 
 export const RecentFiles = ({ recentFiles }) => {
+    const [currentFiles, setCurrentFiles] = useState(recentFiles || []);
     const [folders, setFolders] = useState([]);
     const [loadingFolders, setLoadingFolders] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(null);
@@ -31,9 +32,12 @@ export const RecentFiles = ({ recentFiles }) => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const dropdownRef = useRef(null);
 
-    
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+
+    useEffect(() => {
+        setCurrentFiles(recentFiles || []);
+    }, [recentFiles]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -84,44 +88,68 @@ export const RecentFiles = ({ recentFiles }) => {
         setShowDetailModal(true);
     };
 
-    
     const handleDeleteClick = (event, file) => {
         event.preventDefault();
         event.stopPropagation();
-        setItemToDelete(file); 
-        setShowConfirmModal(true); 
-        setDropdownOpen(null); 
+        setItemToDelete(file);
+        setShowConfirmModal(true);
+        setDropdownOpen(null);
     };
 
-    
     const confirmDeleteAction = () => {
-        if (!itemToDelete) return;
+        if (!itemToDelete || !itemToDelete.id) {
+            console.error('No valid item to delete');
+            setShowConfirmModal(false);
+            setItemToDelete(null);
+            return;
+        }
 
-        router.delete(route('files.destroy', itemToDelete.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                
-                setShowConfirmModal(false);
-                setItemToDelete(null);
-            },
-            onError: (errors) => {
-                console.error('Error deleting item:', errors);
-                
-                alert('Failed to delete the item. Please try again.');
-                
-                setShowConfirmModal(false);
-                setItemToDelete(null);
-            }
-        });
+        try {
+            
+            setCurrentFiles(prevFiles => prevFiles.filter(f => f.id !== itemToDelete.id));
+            setShowConfirmModal(false);
+
+            
+            router.delete(route('files.destroy', itemToDelete.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    
+                    setItemToDelete(null);
+                },
+                onError: (errors) => {
+                    console.error('Error deleting item:', errors);
+                    
+                    setCurrentFiles(recentFiles);
+                    alert('Failed to delete the item. Please try again.');
+                    setItemToDelete(null);
+                }
+            });
+        } catch (error) {
+            console.error('Exception during delete operation:', error);
+            setCurrentFiles(recentFiles);
+            alert('An unexpected error occurred. Please try again.');
+            setShowConfirmModal(false);
+            setItemToDelete(null);
+        }
     };
 
     const handleToggleStar = (event, fileId) => {
         event.preventDefault();
+
+        
+        setCurrentFiles(prevFiles =>
+            prevFiles.map(f => f.id === fileId ? {...f, starred: !f.starred} : f)
+        );
+
+        
         router.post(route('files.toggle-star', fileId), {}, {
             preserveScroll: true,
+            onError: () => {
+                
+                setCurrentFiles(recentFiles);
+            }
         });
     }
-
 
     return (
         <div>
@@ -129,7 +157,7 @@ export const RecentFiles = ({ recentFiles }) => {
                 <h2 className="text-lg font-medium dark:text-white">Recent</h2>
             </div>
 
-            {recentFiles.length > 0 ? (
+            {currentFiles.length > 0 ? (
                 <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
                     <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300 gap-x-4">
                         <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
@@ -138,7 +166,7 @@ export const RecentFiles = ({ recentFiles }) => {
                         <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
                     </div>
 
-                    {recentFiles.map((file) => (
+                    {currentFiles.map((file) => (
                         <div key={file.id} className="grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm items-center gap-x-4">
                             <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden">
                                 <div className="flex-shrink-0">{getFileIcon(file.type)}</div>
@@ -156,7 +184,7 @@ export const RecentFiles = ({ recentFiles }) => {
                             </div>
                             <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">{file.size}</div>
                             <div className="col-span-2 md:col-span-2 hidden md:flex items-center text-gray-600 dark:text-gray-400">{file.lastModified}</div>
-                            <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1">
+                            <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1 flex-wrap">
                                 <button
                                     onClick={() => handleShowDetails(file)}
                                     className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
@@ -202,10 +230,9 @@ export const RecentFiles = ({ recentFiles }) => {
                                                 ))
                                             )}
                                             <div className="border-t dark:border-gray-700 my-1"></div>
-                                            {/* Updated Delete Link */}
                                             <button
                                                 type="button"
-                                                onClick={(e) => handleDeleteClick(e, file)} 
+                                                onClick={(e) => handleDeleteClick(e, file)}
                                                 className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700"
                                             >
                                                 Delete
@@ -213,10 +240,9 @@ export const RecentFiles = ({ recentFiles }) => {
                                         </div>
                                     )}
                                 </div>
-                                {/* Updated Standalone Delete Icon */}
                                 <button
                                     type="button"
-                                    onClick={(e) => handleDeleteClick(e, file)} 
+                                    onClick={(e) => handleDeleteClick(e, file)}
                                     className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                     title="Delete"
                                 >
@@ -238,7 +264,6 @@ export const RecentFiles = ({ recentFiles }) => {
                 file={selectedFile}
             />
 
-            {/* Render the Confirmation Modal */}
             <ConfirmDeleteModal
                 isOpen={showConfirmModal}
                 onClose={() => {
@@ -246,8 +271,8 @@ export const RecentFiles = ({ recentFiles }) => {
                     setItemToDelete(null);
                 }}
                 onConfirm={confirmDeleteAction}
-                itemName={itemToDelete?.name} 
-                itemType="file" 
+                itemName={itemToDelete?.name}
+                itemType="file"
             />
         </div>
     );

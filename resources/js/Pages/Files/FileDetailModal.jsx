@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Link as LinkIcon, ExternalLink, Database } from 'lucide-react';
 import IPFSUploadButton from '@/Pages/IPFS/IPFSUploadButton';
 
 const FileDetailModal = ({ isOpen, onClose, file }) => {
+    const [isUploaded, setIsUploaded] = useState(false);
+
     if (!isOpen || !file) return null;
+
+    const handleIPFSSuccess = (data) => {
+        setIsUploaded(true);
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -48,7 +54,7 @@ const FileDetailModal = ({ isOpen, onClose, file }) => {
 
                     <div>
                         <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">IPFS Status</h4>
-                        {file.ipfs_hash ? (
+                        {(file.ipfs_hash || isUploaded) ? (
                             <div className="flex items-center text-blue-600 dark:text-blue-400 mb-2">
                                 <Database size={16} className="mr-1" />
                                 <span>Stored on IPFS</span>
@@ -58,7 +64,8 @@ const FileDetailModal = ({ isOpen, onClose, file }) => {
                         )}
                         <IPFSUploadButton
                             fileId={file.id}
-                            isOnIPFS={!!file.ipfs_hash}
+                            isOnIPFS={!!file.ipfs_hash || isUploaded}
+                            onSuccess={handleIPFSSuccess}
                         />
                     </div>
 
@@ -69,7 +76,9 @@ const FileDetailModal = ({ isOpen, onClose, file }) => {
                                 <div className="flex items-center">
                                     <p className="text-gray-900 dark:text-white truncate mr-2 font-mono text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded">{file.ipfs_hash}</p>
                                     <button
-                                        onClick={() => navigator.clipboard.writeText(file.ipfs_hash)}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(file.ipfs_hash);
+                                        }}
                                         className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800"
                                         title="Copy IPFS hash"
                                     >

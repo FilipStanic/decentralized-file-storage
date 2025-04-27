@@ -87,7 +87,6 @@ const IPFSIndex = ({ auth, ipfsFiles }) => {
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-                {/* Pass correct onCreateNew */}
                 <Sidebar expanded={true} onCreateNew={handleUpload} />
 
                 <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900" onDragOver={handleDrag} onDragEnter={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop}>

@@ -6,14 +6,19 @@ export const ConfirmDeleteModal = ({
                                        onClose,
                                        onConfirm,
                                        itemName,
-                                       itemType = 'item' // Default to 'item', can be 'file' or 'folder'
+                                       itemType = 'item' 
                                    }) => {
     if (!isOpen) return null;
+
+    const handleConfirm = () => {
+        if (typeof onConfirm === 'function') {
+            onConfirm();
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-auto">
-                {/* Header */}
                 <div className="flex justify-between items-center border-b dark:border-gray-700 px-6 py-4">
                     <h3 className="text-lg font-medium dark:text-white flex items-center">
                         <AlertTriangle size={20} className="text-red-500 mr-2" />
@@ -24,7 +29,6 @@ export const ConfirmDeleteModal = ({
                     </button>
                 </div>
 
-                {/* Body */}
                 <div className="px-6 py-6">
                     <p className="text-gray-700 dark:text-gray-300 text-center">
                         Are you sure you want to delete the {itemType}
@@ -35,7 +39,6 @@ export const ConfirmDeleteModal = ({
                     </p>
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-end gap-3 border-t dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50 rounded-b-lg">
                     <button
                         type="button"
@@ -47,7 +50,7 @@ export const ConfirmDeleteModal = ({
                     <button
                         type="button"
                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                        onClick={onConfirm}
+                        onClick={handleConfirm}
                     >
                         Move to Trash
                     </button>
