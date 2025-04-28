@@ -61,17 +61,15 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // Delete old profile picture if it exists
-        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png')) {
-            // Extract the file path from the URL
+
+        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png') && !str_contains($user->profile_picture, 'images/default')) {
+
             $path = str_replace('/storage/', '', $user->profile_picture);
             Storage::disk('public')->delete($path);
         }
 
-        // Store new picture and get the path
         $path = $request->file('profile_picture')->store('profile_pictures', 'public');
 
-        // Save the full URL to the database
         $user->update([
             'profile_picture' => "/storage/{$path}"
         ]);
@@ -83,17 +81,15 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Only process if user has a custom profile picture
-        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png')) {
-            // Extract the file path from the URL
+
+        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png') && !str_contains($user->profile_picture, 'images/default')) {
+
             $path = str_replace('/storage/', '', $user->profile_picture);
 
-            // Delete the file from storage
             Storage::disk('public')->delete($path);
 
-            // Set profile picture to null or default
             $user->update([
-                'profile_picture' => '/storage/profile_pictures/default-avatar.png'
+                'profile_picture' => '/images/default/default-avatar.png'
             ]);
 
             return response()->json(['success' => true, 'message' => 'Profile picture removed successfully.']);

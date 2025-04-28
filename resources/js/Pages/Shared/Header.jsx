@@ -55,6 +55,12 @@ export const Header = ({
         }
     };
 
+    // Create a simple error handler for image loading
+    const handleImageError = (e) => {
+        // Fallback to default avatar if the profile picture fails to load
+        e.target.src = '/images/default/default-avatar.png';
+    };
+
     return (
         <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="relative w-full max-w-md lg:max-w-lg">
@@ -106,11 +112,14 @@ export const Header = ({
                                         src={auth.user.profile_picture}
                                         alt={auth.user.name}
                                         className="w-full h-full object-cover"
+                                        onError={handleImageError}
                                     />
                                 ) : (
-                                    <span className="text-gray-600 dark:text-gray-300 font-medium">
-                                        {auth.user.name.charAt(0).toUpperCase()}
-                                    </span>
+                                    <img
+                                        src="/images/default/default-avatar.png"
+                                        alt={auth.user.name}
+                                        className="w-full h-full object-cover"
+                                    />
                                 )}
                             </div>
 
