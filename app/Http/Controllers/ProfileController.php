@@ -8,14 +8,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): Response
     {
         return Inertia::render('Profile/Edit', [
@@ -24,9 +22,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
@@ -40,9 +35,6 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate([
@@ -69,14 +61,44 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        if ($user->profile_picture) {
-            \Storage::disk('public')->delete($user->profile_picture);
+        // Delete old profile picture if it exists
+        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png')) {
+            // Extract the file path from the URL
+            $path = str_replace('/storage/', '', $user->profile_picture);
+            Storage::disk('public')->delete($path);
         }
 
+        // Store new picture and get the path
         $path = $request->file('profile_picture')->store('profile_pictures', 'public');
 
-        $user->update(['profile_picture' => "/storage/{$path}"]);
+        // Save the full URL to the database
+        $user->update([
+            'profile_picture' => "/storage/{$path}"
+        ]);
 
         return back()->with('success', 'Profile picture updated successfully.');
+    }
+
+    public function removeProfilePicture(Request $request)
+    {
+        $user = $request->user();
+
+        // Only process if user has a custom profile picture
+        if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png')) {
+            // Extract the file path from the URL
+            $path = str_replace('/storage/', '', $user->profile_picture);
+
+            // Delete the file from storage
+            Storage::disk('public')->delete($path);
+
+            // Set profile picture to null or default
+            $user->update([
+                'profile_picture' => '/storage/profile_pictures/default-avatar.png'
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Profile picture removed successfully.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No custom profile picture to remove.']);
     }
 }

@@ -76,6 +76,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/profile/picture', [ProfileController::class, 'updateProfilePicture'])->name('profile.picture.update');
+    Route::post('/profile/picture/remove', [ProfileController::class, 'removeProfilePicture'])
+        ->name('profile.picture.remove');
 });
 
 

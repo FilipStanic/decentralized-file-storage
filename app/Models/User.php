@@ -14,6 +14,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_picture',
     ];
 
     protected $hidden = [
@@ -53,7 +54,6 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-
     public function getLocalStorageUsedAttribute()
     {
         return $this->files()->sum('size');
@@ -64,18 +64,15 @@ class User extends Authenticatable
         return $this->files()->whereNotNull('ipfs_hash')->sum('size');
     }
 
-
     public function getFormattedLocalStorageUsedAttribute()
     {
         return $this->formatBytes($this->local_storage_used);
     }
 
-
     public function getFormattedIpfsStorageUsedAttribute()
     {
         return $this->formatBytes($this->ipfs_storage_used);
     }
-
 
     public function getIpfsStoragePercentageAttribute()
     {
@@ -83,7 +80,6 @@ class User extends Authenticatable
         $percentage = ($this->ipfs_storage_used / $limit) * 100;
         return min(round($percentage, 1), 100);
     }
-
 
     public function getLocalStoragePercentageAttribute()
     {
@@ -109,5 +105,15 @@ class User extends Authenticatable
     {
         $limit = 1 * 1024 * 1024 * 1024; // 1GB in bytes
         return ($this->ipfs_storage_used + $fileSize) <= $limit;
+    }
+
+    public function getProfilePictureUrlAttribute()
+    {
+        if ($this->profile_picture) {
+            return $this->profile_picture;
+        }
+
+        // Return a default avatar if no profile picture is set
+        return '/storage/profile_pictures/default-avatar.png';
     }
 }

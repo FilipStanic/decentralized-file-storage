@@ -1,72 +1,127 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 
 export default function UpdateProfilePictureForm({ className, auth }) {
-    const { data, setData, post, progress, errors, processing } = useForm({
+    const [previewUrl, setPreviewUrl] = useState(auth.user.profile_picture);
+    const fileInputRef = useRef(null);
+
+    const { data, setData, post, progress, errors, processing, reset } = useForm({
         profile_picture: null,
     });
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('profile_picture', file);
+
+            // Create a preview URL for the selected image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setPreviewUrl(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('profile.picture.update'), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                // Leave the preview URL as is since it now shows the uploaded image
+            },
         });
     };
 
-    return (
-        <form onSubmit={handleSubmit} className={`space-y-6 ${className}`}>
-            <div>
-                <label htmlFor="profile_picture" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Profile Picture
-                </label>
-                <div className="flex items-center gap-4">
-                    {auth.user.profile_picture ? (
-                        <img
-                            src={auth.user.profile_picture}
-                            alt="Profile"
-                            className="w-16 h-16 rounded-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <span className="text-gray-600 dark:text-gray-300 font-medium text-lg">
-                                {auth.user.name.charAt(0).toUpperCase()}
-                            </span>
-                        </div>
-                    )}
-                    <input
-                        type="file"
-                        id="profile_picture"
-                        name="profile_picture"
-                        accept="image/*"
-                        onChange={(e) => setData('profile_picture', e.target.files[0])}
-                        className="mt-1 block w-full text-sm text-gray-900 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 dark:file:bg-gray-700 dark:file:text-gray-300 dark:hover:file:bg-gray-600"
-                    />
-                </div>
-                {errors.profile_picture && (
-                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.profile_picture}</p>
-                )}
-            </div>
+    const handleSelectImage = () => {
+        fileInputRef.current?.click();
+    };
 
-            {progress && (
-                <div className="w-full bg-gray-200 rounded-full dark:bg-gray-700">
-                    <div
-                        className="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full"
-                        style={{ width: `${progress.percentage}%` }}
-                    >
-                        {progress.percentage}%
+    return (
+        <div className={`p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Profile Picture</h2>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
+                    <div className="flex-shrink-0">
+                        <div className="relative">
+                            <img
+                                src={previewUrl || auth.user.profile_picture}
+                                alt={auth.user.name}
+                                className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleSelectImage}
+                                className="absolute bottom-0 right-0 bg-indigo-600 text-white p-2 rounded-full shadow-md hover:bg-indigo-700"
+                                title="Change profile picture"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                        <input
+                            type="file"
+                            id="profile_picture"
+                            name="profile_picture"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                        />
+
+                        <div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                Upload a new profile picture. Images should be square for best results.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={handleSelectImage}
+                                className="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                            >
+                                Select Image
+                            </button>
+                        </div>
+
+                        {data.profile_picture && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                                Selected: {data.profile_picture.name}
+                            </div>
+                        )}
+
+                        {errors.profile_picture && (
+                            <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.profile_picture}</p>
+                        )}
                     </div>
                 </div>
-            )}
 
-            <div className="flex items-center gap-4">
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                >
-                    Upload
-                </button>
-            </div>
-        </form>
+                {progress && (
+                    <div className="w-full bg-gray-200 rounded-full dark:bg-gray-700 mt-4">
+                        <div
+                            className="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full"
+                            style={{ width: `${progress.percentage}%` }}
+                        >
+                            {progress.percentage}%
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center justify-end">
+                    <button
+                        type="submit"
+                        disabled={!data.profile_picture || processing}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                    >
+                        {processing ? 'Uploading...' : 'Update Picture'}
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 }
