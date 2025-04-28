@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
+import axios from 'axios';
 
 export default function UpdateProfilePictureForm({ className, auth }) {
     const [previewUrl, setPreviewUrl] = useState(auth.user.profile_picture);
+    const [isRemoving, setIsRemoving] = useState(false);
     const fileInputRef = useRef(null);
 
     const { data, setData, post, progress, errors, processing, reset } = useForm({
@@ -37,6 +39,29 @@ export default function UpdateProfilePictureForm({ className, auth }) {
     const handleSelectImage = () => {
         fileInputRef.current?.click();
     };
+
+    const handleRemoveImage = async () => {
+        if (confirm('Are you sure you want to remove your profile picture?')) {
+            setIsRemoving(true);
+            try {
+                const response = await axios.post(route('profile.picture.remove'));
+                if (response.data.success) {
+                    // Reset the preview to the default avatar
+                    setPreviewUrl('/storage/profile_pictures/default-avatar.png');
+                    // Force a reload to update all instances of the profile picture
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error removing profile picture:', error);
+                alert('Failed to remove profile picture. Please try again.');
+            } finally {
+                setIsRemoving(false);
+            }
+        }
+    };
+
+    // Check if user has a custom profile picture (not the default one)
+    const hasCustomProfilePicture = !auth.user.profile_picture.includes('default-avatar.png');
 
     return (
         <div className={`p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
@@ -80,13 +105,26 @@ export default function UpdateProfilePictureForm({ className, auth }) {
                             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                                 Upload a new profile picture. Images should be square for best results.
                             </p>
-                            <button
-                                type="button"
-                                onClick={handleSelectImage}
-                                className="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
-                            >
-                                Select Image
-                            </button>
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleSelectImage}
+                                    className="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                                >
+                                    Select Image
+                                </button>
+
+                                {hasCustomProfilePicture && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        disabled={isRemoving}
+                                        className="inline-flex items-center px-4 py-2 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md font-semibold text-xs text-red-700 dark:text-red-400 uppercase tracking-widest hover:bg-red-200 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150 disabled:opacity-50"
+                                    >
+                                        {isRemoving ? 'Removing...' : 'Remove Image'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {data.profile_picture && (

@@ -94,7 +94,6 @@ export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
             onUploadProgress: progressEvent => setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total))
         }).then(() => {
             setShowUploadModal(false); setUploadData({ file: null }); setUploadProgress(null);
-            alert('File uploaded successfully!');
             router.visit(route('home'));
         }).catch(error => {
             setUploadErrors(error.response?.data?.errors || { file: "Upload failed." });
