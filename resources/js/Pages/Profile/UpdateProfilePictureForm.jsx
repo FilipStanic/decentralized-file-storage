@@ -16,7 +16,6 @@ export default function UpdateProfilePictureForm({ className, auth }) {
         if (file) {
             setData('profile_picture', file);
 
-            // Create a preview URL for the selected image
             const reader = new FileReader();
             reader.onload = (e) => {
                 setPreviewUrl(e.target.result);
@@ -31,7 +30,6 @@ export default function UpdateProfilePictureForm({ className, auth }) {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
-                // Leave the preview URL as is since it now shows the uploaded image
             },
         });
     };
@@ -46,9 +44,7 @@ export default function UpdateProfilePictureForm({ className, auth }) {
             try {
                 const response = await axios.post(route('profile.picture.remove'));
                 if (response.data.success) {
-                    // Reset the preview to the default avatar
                     setPreviewUrl('/storage/profile_pictures/default-avatar.png');
-                    // Force a reload to update all instances of the profile picture
                     window.location.reload();
                 }
             } catch (error) {
@@ -58,10 +54,12 @@ export default function UpdateProfilePictureForm({ className, auth }) {
                 setIsRemoving(false);
             }
         }
+
+        setPreviewUrl('/images/defaults/default-avatar.png');
     };
 
-    // Check if user has a custom profile picture (not the default one)
-    const hasCustomProfilePicture = !auth.user.profile_picture.includes('default-avatar.png');
+
+    const hasCustomProfilePicture = auth.user.profile_picture !== null;
 
     return (
         <div className={`p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>

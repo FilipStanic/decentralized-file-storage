@@ -29,7 +29,7 @@ Route::get('/', function () {
     ], $fileData));
 })->name('home');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
     Route::post('/files/{file}/toggle-star', [FileController::class, 'toggleStar'])->name('files.toggle-star');
@@ -53,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -62,7 +62,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/sidebar/data', [SidebarController::class, 'data'])->name('sidebar.data');
 
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/folders/{id?}', [FolderController::class, 'show'])->name('folders.show');
     Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
     Route::put('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
@@ -74,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/profile/picture', [ProfileController::class, 'updateProfilePicture'])->name('profile.picture.update');
     Route::post('/profile/picture/remove', [ProfileController::class, 'removeProfilePicture'])
         ->name('profile.picture.remove');
