@@ -89,7 +89,7 @@ class ProfileController extends Controller
             Storage::disk('public')->delete($path);
 
             $user->update([
-                'profile_picture' => '/images/default/default-avatar.png'
+                'profile_picture' => '/images/defaults/default-avatar.png'
             ]);
 
             return response()->json(['success' => true, 'message' => 'Profile picture removed successfully.']);

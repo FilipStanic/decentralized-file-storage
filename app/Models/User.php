@@ -116,7 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $this->profile_picture;
         }
 
-        return '/images/default/default-avatar.png';
+        return '/images/defaults/default-avatar.png';
     }
 
     public function sendPasswordResetNotification($token)

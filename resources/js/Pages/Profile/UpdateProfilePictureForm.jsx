@@ -44,7 +44,7 @@ export default function UpdateProfilePictureForm({ className, auth }) {
             try {
                 const response = await axios.post(route('profile.picture.remove'));
                 if (response.data.success) {
-                    setPreviewUrl('/images/default/default-avatar.png');
+                    setPreviewUrl('/images/defaults/default-avatar.png');
                     window.location.reload();
                 }
             } catch (error) {
@@ -58,11 +58,11 @@ export default function UpdateProfilePictureForm({ className, auth }) {
 
     // Handle image loading errors
     const handleImageError = (e) => {
-        e.target.src = '/images/default/default-avatar.png';
+        e.target.src = '/images/defaults/default-avatar.png';
     };
 
     const hasCustomProfilePicture = auth.user.profile_picture !== null
-        && !auth.user.profile_picture.includes('/images/default/default-avatar.png');
+        && !auth.user.profile_picture.includes('/images/defaults/default-avatar.png');
 
     return (
         <div className={`p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
@@ -73,7 +73,7 @@ export default function UpdateProfilePictureForm({ className, auth }) {
                     <div className="flex-shrink-0">
                         <div className="relative">
                             <img
-                                src={previewUrl || auth.user.profile_picture || '/images/default/default-avatar.png'}
+                                src={previewUrl || auth.user.profile_picture || '/images/defaults/default-avatar.png'}
                                 alt={auth.user.name}
                                 className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                                 onError={handleImageError}

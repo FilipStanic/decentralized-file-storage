@@ -55,10 +55,9 @@ export const Header = ({
         }
     };
 
-    // Create a simple error handler for image loading
+
     const handleImageError = (e) => {
-        // Fallback to default avatar if the profile picture fails to load
-        e.target.src = '/images/default/default-avatar.png';
+        e.target.src = '/images/defaults/default-avatar.png';
     };
 
     return (
@@ -116,7 +115,7 @@ export const Header = ({
                                     />
                                 ) : (
                                     <img
-                                        src="/images/default/default-avatar.png"
+                                        src="/images/defaults/default-avatar.png"
                                         alt={auth.user.name}
                                         className="w-full h-full object-cover"
                                     />
