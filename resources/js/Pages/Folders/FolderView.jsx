@@ -51,7 +51,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [folderToRename, setFolderToRename] = useState(null);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
-
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -59,16 +58,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(null);
-
     const { searchTerm, isSearching } = useSearch();
     const [filteredFolders, setFilteredFolders] = useState(folders);
     const [filteredFiles, setFilteredFiles] = useState(files);
     const [totalResults, setTotalResults] = useState(0);
-
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const isAuthenticated = auth && auth.user;
-
     const [data, setData] = useState({ file: null });
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
@@ -76,16 +72,15 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
 
     useEffect(() => {
         setLoadingDestinations(true);
-        axios.get(route('sidebar.data'))
+
+        const currentFolderId = currentFolder ? currentFolder.id : null;
+        axios.get(route('sidebar.available-folders', { current_folder_id: currentFolderId }))
             .then(response => {
-                const currentFolderId = currentFolder ? currentFolder.id : null;
-                setDestinationFolders(
-                    (response.data.rootFolders || []).filter(f => f.id !== currentFolderId)
-                );
+                setDestinationFolders(response.data.folders || []);
                 setLoadingDestinations(false);
             })
             .catch(error => {
-                console.error('Error fetching destination folders:', error);
+                console.error('Error fetching available folders:', error);
                 setLoadingDestinations(false);
             });
     }, [currentFolder]);
@@ -116,16 +111,25 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     }, [searchTerm, folders, files]);
 
     const handleMoveFile = (fileId, folderId) => {
-        axios.post(route('files.move', fileId), { folder_id: folderId })
-            .then(() => window.location.reload())
-            .catch(error => console.error('Error moving file:', error))
-            .finally(() => setDropdownOpen(null));
+        setDropdownOpen(null);
+
+        router.post(route('files.move', fileId), {
+            folder_id: folderId
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                router.reload({ only: ['files'] });
+            },
+            onError: (errors) => {
+                console.error('Error moving file:', errors);
+                alert(`Error moving file: ${errors.message || 'Please try again.'}`);
+            }
+        });
     };
 
     const handleUpload = () => setShowUploadModal(true);
     const handleNewFolder = () => setShowFolderModal(true);
     const handleFileUpload = () => fileInputRef.current.click();
-
     const handleFileChange = (e) => {
         if (e.target.files.length > 0) {
             setData({ ...data, file: e.target.files[0] });
@@ -151,17 +155,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
         if (!data.file) return;
-
         setProcessing(true);
         setProgress(0);
-
         const formData = new FormData();
         formData.append('file', data.file);
-
         if (currentFolder) {
             formData.append('folder_id', currentFolder.id);
         }
-
         axios.post(route('files.store'), formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             onUploadProgress: p => setProgress(Math.round((p.loaded * 100) / p.total))
@@ -180,11 +180,9 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
 
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
-
         if (currentFolder) {
             folderData.parent_id = currentFolder.id;
         }
-
         axios.post(route('folders.store'), folderData)
             .then(() => {
                 setShowFolderModal(false);
@@ -218,7 +216,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
 
     const confirmDeleteAction = () => {
         if (!itemToDelete) return;
-
         router.delete(route('files.destroy', itemToDelete.id), {
             preserveScroll: true,
             preserveState: true,
@@ -255,10 +252,8 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         <>
             <Head title={currentFolder ? currentFolder.name : 'All Folders'} />
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
                 <Sidebar expanded={true} onCreateNew={(type) => type === 'folder' ? handleNewFolder() : handleUpload()} />
-
                 <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900"
                      onDragOver={handleDrag}
                      onDragEnter={handleDrag}
@@ -266,7 +261,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                      onDrop={handleDrop}>
                     <Header isAuthenticated={isAuthenticated} auth={auth} onUserDropdownToggle={() => {}} />
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
-
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
                         <div>
                             <h1 className="text-xl sm:text-2xl font-semibold dark:text-white truncate">
@@ -290,7 +284,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                             </button>
                         </div>
                     </div>
-
                     {filteredFolders.length > 0 && (
                         <div className="mb-8">
                             <h2 className="text-lg font-medium mb-4 dark:text-white">
@@ -303,20 +296,18 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                             </div>
                         </div>
                     )}
-
                     <div className="mb-8">
                         <h2 className="text-lg font-medium mb-4 dark:text-white">
                             {isSearching ? 'Files Found' : 'Files'}
                         </h2>
                         {filteredFiles.length > 0 ? (
-                            <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
+                            <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                                 <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                                     <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
                                     <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
                                     <div className="col-span-2 md:col-span-2 hidden md:flex items-center gap-2">Modified</div>
                                     <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
                                 </div>
-
                                 {filteredFiles.map((file) => (
                                     <div key={file.id} className="grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm items-center">
                                         <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden">
@@ -328,15 +319,12 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                                 </span>
                                             )}
                                         </div>
-
                                         <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-gray-600 dark:text-gray-400">
                                             {file.size}
                                         </div>
-
                                         <div className="col-span-2 md:col-span-2 hidden md:flex items-center text-gray-600 dark:text-gray-400">
                                             {file.lastModified}
                                         </div>
-
                                         <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1 flex-wrap py-1">
                                             <button
                                                 onClick={() => handleShowDetails(file)}
@@ -345,7 +333,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                             >
                                                 <Info size={18} />
                                             </button>
-
                                             <a
                                                 href={route('files.download', file.id)}
                                                 className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
@@ -353,7 +340,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                             >
                                                 <Download size={18} />
                                             </a>
-
                                             <button
                                                 onClick={(e) => handleFileToggleStar(e, file.id)}
                                                 className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
@@ -365,7 +351,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                                     className={file.starred ? "text-yellow-400" : ""}
                                                 />
                                             </button>
-
                                             <div className="relative">
                                                 <button
                                                     onClick={() => toggleDropdown(file.id)}
@@ -374,39 +359,35 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                                 >
                                                     <MoreHorizontal size={18} />
                                                 </button>
-
                                                 {dropdownOpen === file.id && (
                                                     <div
                                                         ref={dropdownRef}
-                                                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700"
+                                                        className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700 max-h-60 overflow-y-auto"
                                                     >
                                                         <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
                                                             Move to folder
                                                         </div>
 
-                                                        <button
-                                                            onClick={() => handleMoveFile(file.id, null)}
-                                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                        >
-                                                            Root folder
-                                                        </button>
-
                                                         {loadingDestinations ? (
                                                             <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                                                         ) : (
-                                                            destinationFolders.map(folder => (
-                                                                <button
-                                                                    key={folder.id}
-                                                                    onClick={() => handleMoveFile(file.id, folder.id)}
-                                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                                >
-                                                                    {folder.name}
-                                                                </button>
-                                                            ))
+                                                            <>
+                                                                {destinationFolders.map(folder => (
+                                                                    <button
+                                                                        key={folder.id}
+                                                                        onClick={() => handleMoveFile(file.id, folder.id)}
+                                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                    >
+                                                                        {folder.full_path}
+                                                                    </button>
+                                                                ))}
+
+                                                                {destinationFolders.length === 0 && (
+                                                                    <div className="px-4 py-2 text-sm text-gray-500">No available folders to move to</div>
+                                                                )}
+                                                            </>
                                                         )}
-
                                                         <div className="border-t dark:border-gray-700 my-1"></div>
-
                                                         <button
                                                             type="button"
                                                             onClick={(e) => handleDeleteClick(e, file)}
@@ -417,7 +398,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                                                     </div>
                                                 )}
                                             </div>
-
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleDeleteClick(e, file)}
@@ -444,7 +424,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                             </div>
                         )}
                     </div>
-
                     {isSearching && totalResults === 0 && (
                         <div className="text-center py-8 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg mt-4">
                             <p className="text-gray-500 dark:text-gray-400">
@@ -454,7 +433,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     )}
                 </div>
             </div>
-
             <UploadModal
                 isOpen={showUploadModal}
                 onClose={() => {
@@ -476,7 +454,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 progress={progress}
                 folderId={currentFolder?.id}
             />
-
             <CreateFolderModal
                 isOpen={showFolderModal}
                 onClose={() => setShowFolderModal(false)}
@@ -484,13 +461,11 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 processing={processingFolder}
                 parentId={currentFolder?.id}
             />
-
             <FileDetailModal
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
                 file={selectedFile}
             />
-
             <RenameFolderModal
                 isOpen={showRenameModal}
                 onClose={() => {
@@ -499,7 +474,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }}
                 folder={folderToRename}
             />
-
             <ConfirmDeleteModal
                 isOpen={showConfirmDeleteModal}
                 onClose={() => {

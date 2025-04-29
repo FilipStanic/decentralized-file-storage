@@ -85,13 +85,19 @@ class Folder extends Model
 
     public function getAllChildren()
     {
-        $children = $this->children;
+        $allChildren = collect();
 
         foreach ($this->children as $child) {
-            $children = $children->merge($child->getAllChildren());
+
+            $allChildren->push($child);
+
+            $childrenOfChild = $child->getAllChildren();
+            if ($childrenOfChild->count() > 0) {
+                $allChildren = $allChildren->merge($childrenOfChild);
+            }
         }
 
-        return $children;
+        return $allChildren;
     }
 
     public function scopeNotTrashed($query)

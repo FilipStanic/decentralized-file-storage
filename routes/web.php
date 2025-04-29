@@ -35,6 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/files/{file}/toggle-star', [FileController::class, 'toggleStar'])->name('files.toggle-star');
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::put('/files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
+    Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
+
 
 
     Route::get('/starred', [StarredController::class, 'index'])->name('starred.index');
@@ -70,8 +72,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/folders/{folder}/toggle-star', [FolderController::class, 'toggleStar'])->name('folders.toggle-star');
     Route::post('/folders/{folder?}/move-files', [FolderController::class, 'moveFiles'])->name('folders.move-files');
     Route::post('/folders/{targetFolder?}/move-folders', [FolderController::class, 'moveFolders'])->name('folders.move-folders');
+    Route::get('/sidebar/available-folders', [SidebarController::class, 'availableFolders'])->name('sidebar.available-folders');
 
-    Route::post('/files/{id}/move', [FileController::class, 'move'])->name('files.move');
+
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
