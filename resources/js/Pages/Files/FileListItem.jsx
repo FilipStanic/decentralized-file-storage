@@ -1,11 +1,9 @@
 import React from 'react';
-import { Download, Star, Trash2, MoreHorizontal, Info, CheckSquare, Square } from 'lucide-react';
+import { Download, Star, Trash2, MoreHorizontal, Info, CheckSquare, Square, File, FileText, Image } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 import { useDragDrop } from '@/Pages/DragDropService.jsx';
 
 const getFileIcon = (type) => {
-    const { File, FileText, Image } = require('lucide-react');
-
     switch (type) {
         case 'Image': return <Image className="text-green-500" />;
         case 'PDF': return <FileText className="text-red-500" />;
@@ -28,12 +26,8 @@ const FileListItem = ({
                           destinationFolders,
                           dropdownRef
                       }) => {
-    // Multi-select functionality
     const { isSelectionMode, toggleFileSelection, isFileSelected } = useMultiSelect();
-
-    // Drag and drop functionality
     const { startDraggingFile } = useDragDrop();
-
     const isSelected = isFileSelected(file.id);
 
     return (
@@ -111,7 +105,6 @@ const FileListItem = ({
                             <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
                                 Move to folder
                             </div>
-
                             {loadingDestinations ? (
                                 <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                             ) : (
@@ -125,7 +118,6 @@ const FileListItem = ({
                                             {folder.full_path}
                                         </button>
                                     ))}
-
                                     {destinationFolders.length === 0 && (
                                         <div className="px-4 py-2 text-sm text-gray-500">No available folders to move to</div>
                                     )}

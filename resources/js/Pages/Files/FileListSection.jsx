@@ -22,7 +22,7 @@ const FileListSection = ({
                 {isSearching ? 'Files Found' : 'Files'}
             </h2>
             {filteredFiles.length > 0 ? (
-                <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
+                <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                     <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
                         <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
                         <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
