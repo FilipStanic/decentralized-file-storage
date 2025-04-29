@@ -1,0 +1,66 @@
+import React from 'react';
+import FileListItem from '@/Pages/Files/FileListItem';
+
+const FileListSection = ({
+                             filteredFiles,
+                             isSearching,
+                             searchTerm,
+                             currentFolder,
+                             dropdownOpen,
+                             toggleDropdown,
+                             handleShowDetails,
+                             handleFileToggleStar,
+                             handleDeleteClick,
+                             handleMoveFile,
+                             loadingDestinations,
+                             destinationFolders,
+                             dropdownRef
+                         }) => {
+    return (
+        <div className="mb-8">
+            <h2 className="text-lg font-medium mb-4 dark:text-white">
+                {isSearching ? 'Files Found' : 'Files'}
+            </h2>
+            {filteredFiles.length > 0 ? (
+                <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
+                    <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
+                        <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
+                        <div className="col-span-2 md:col-span-2 hidden md:flex items-center gap-2">Modified</div>
+                        <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
+                    </div>
+
+                    {filteredFiles.map((file) => (
+                        <FileListItem
+                            key={file.id}
+                            file={file}
+                            dropdownOpen={dropdownOpen}
+                            toggleDropdown={toggleDropdown}
+                            handleShowDetails={handleShowDetails}
+                            handleFileToggleStar={handleFileToggleStar}
+                            handleDeleteClick={handleDeleteClick}
+                            handleMoveFile={handleMoveFile}
+                            loadingDestinations={loadingDestinations}
+                            destinationFolders={destinationFolders}
+                            dropdownRef={dropdownRef}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-8 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                    {isSearching ? (
+                        <p className="text-gray-500 dark:text-gray-400">
+                            No files matching "{searchTerm}" {currentFolder ? 'in this folder' : ''}.
+                        </p>
+                    ) : (
+                        <p className="text-gray-500 dark:text-gray-400">
+                            No files {currentFolder ? 'in this folder' : ''}. Upload files to see them here.
+                        </p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default FileListSection;
