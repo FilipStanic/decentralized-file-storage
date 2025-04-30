@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Folder;
@@ -7,31 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SidebarController extends Controller
 {
-    public function data()
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json([
-                'rootFolders' => []
-            ]);
-        }
-
-        $rootFolders = $user->folders()
-            ->whereNull('parent_id')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($folder) {
-                return [
-                    'id' => $folder->id,
-                    'name' => $folder->name,
-                    'color' => $folder->color ?? '#6366F1',
-                ];
-            });
-
-        return response()->json([
-            'rootFolders' => $rootFolders
-        ]);
-    }
+    
 
     public function availableFolders(Request $request)
     {
@@ -50,7 +27,7 @@ class SidebarController extends Controller
 
         $result = [];
 
-
+        
         if ($currentFolderId) {
             $result[] = [
                 'id' => null,
@@ -61,7 +38,7 @@ class SidebarController extends Controller
             ];
         }
 
-
+        
         if ($currentFolderId) {
             $currentFolder = Folder::find($currentFolderId);
             if ($currentFolder) {
@@ -82,18 +59,15 @@ class SidebarController extends Controller
             }
         }
 
+        
         if ($currentFolderId) {
             $currentFolder = Folder::find($currentFolderId);
             $excludedIds = [$currentFolderId];
 
             if ($currentFolder) {
-
                 $descendantIds = $currentFolder->getAllChildren()->pluck('id')->toArray();
                 $excludedIds = array_merge($excludedIds, $descendantIds);
             }
-
-            $parentFolders = [];
-            $parentId = $currentFolder ? $currentFolder->parent_id : null;
 
             $otherFolders = $allFolders->filter(function($folder) use($excludedIds, $result) {
                 return !in_array($folder->id, $excludedIds) &&
@@ -102,32 +76,41 @@ class SidebarController extends Controller
 
             $rootFolders = $otherFolders->whereNull('parent_id');
             foreach ($rootFolders as $folder) {
-                $result[] = [
-                    'id' => $folder->id,
-                    'name' => $folder->name,
-                    'color' => $folder->color ?? '#6366F1',
-                    'path' => [$folder->name],
-                    'full_path' => $folder->name
-                ];
+                
+                if ($folder->name !== 'Root') {
+                    $result[] = [
+                        'id' => $folder->id,
+                        'name' => $folder->name,
+                        'color' => $folder->color ?? '#6366F1',
+                        'path' => [$folder->name],
+                        'full_path' => $folder->name
+                    ];
+                }
             }
 
             foreach ($rootFolders as $rootFolder) {
                 $this->addChildFoldersToResult($result, $otherFolders, $rootFolder, [$rootFolder->name]);
             }
         } else {
+            
             $rootFolders = $allFolders->whereNull('parent_id');
             foreach ($rootFolders as $folder) {
-                $result[] = [
-                    'id' => $folder->id,
-                    'name' => $folder->name,
-                    'color' => $folder->color ?? '#6366F1',
-                    'path' => [$folder->name],
-                    'full_path' => $folder->name
-                ];
+                
+                if ($folder->name !== 'Root') {
+                    $result[] = [
+                        'id' => $folder->id,
+                        'name' => $folder->name,
+                        'color' => $folder->color ?? '#6366F1',
+                        'path' => [$folder->name],
+                        'full_path' => $folder->name
+                    ];
+                }
             }
 
             foreach ($rootFolders as $rootFolder) {
-                $this->addChildFoldersToResult($result, $allFolders, $rootFolder, [$rootFolder->name]);
+                if ($rootFolder->name !== 'Root') {
+                    $this->addChildFoldersToResult($result, $allFolders, $rootFolder, [$rootFolder->name]);
+                }
             }
         }
 
@@ -149,7 +132,6 @@ class SidebarController extends Controller
                 'full_path' => implode(' > ', $path),
                 'parent_id' => $parentFolder->id
             ];
-
 
             $this->addChildFoldersToResult($result, $allFolders, $child, $path);
         }

@@ -134,31 +134,6 @@ class FolderController extends Controller
         return redirect()->back()->with('success', 'Folder updated successfully');
     }
 
-    public function moveFiles(Request $request, Folder $folder = null)
-    {
-        $request->validate([
-            'file_ids' => 'required|array',
-            'file_ids.*' => 'exists:files,id',
-        ]);
-
-        if ($folder && Gate::denies('addFiles', $folder)) {
-            abort(403);
-        }
-
-        $files = File::whereIn('id', $request->file_ids)->get();
-
-        foreach ($files as $file) {
-            if ($file->user_id !== Auth::id()) {
-                abort(403);
-            }
-            $file->update([
-                'folder_id' => $folder ? $folder->id : null,
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Files moved successfully');
-    }
-
     public function moveFolders(Request $request, Folder $targetFolder = null)
     {
         $request->validate([
@@ -166,7 +141,29 @@ class FolderController extends Controller
             'folder_ids.*' => 'exists:folders,id',
         ]);
 
-        if ($targetFolder && Gate::denies('update', $targetFolder)) {
+        if ($targetFolder === null) {
+
+            $folders = Folder::whereIn('id', $request->folder_ids)->get();
+
+            foreach ($folders as $folder) {
+                if ($folder->user_id !== Auth::id()) {
+                    abort(403);
+                }
+
+                if (in_array($folder->id, $request->folder_ids)) {
+                    continue;
+                }
+
+                $folder->update([
+                    'parent_id' => null,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Folders moved successfully');
+        }
+
+        
+        if (Gate::denies('update', $targetFolder)) {
             abort(403);
         }
 
@@ -177,19 +174,62 @@ class FolderController extends Controller
                 abort(403);
             }
 
-            if ($targetFolder && ($folder->id === $targetFolder->id ||
-                    $folder->getAllChildren()->contains('id', $targetFolder->id))) {
+            if ($folder->id === $targetFolder->id ||
+                $folder->getAllChildren()->contains('id', $targetFolder->id)) {
                 continue;
             }
 
             $folder->update([
-                'parent_id' => $targetFolder ? $targetFolder->id : null,
+                'parent_id' => $targetFolder->id,
             ]);
         }
 
         return redirect()->back()->with('success', 'Folders moved successfully');
     }
 
+    public function moveFiles(Request $request, Folder $folder = null)
+    {
+        $request->validate([
+            'file_ids' => 'required|array',
+            'file_ids.*' => 'exists:files,id',
+        ]);
+
+        if ($folder === null) {
+
+            $files = File::whereIn('id', $request->file_ids)->get();
+
+            foreach ($files as $file) {
+                if ($file->user_id !== Auth::id()) {
+                    abort(403);
+                }
+
+                $file->update([
+                    'folder_id' => null,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Files moved successfully');
+        }
+
+
+        if (Gate::denies('addFiles', $folder)) {
+            abort(403);
+        }
+
+        $files = File::whereIn('id', $request->file_ids)->get();
+
+        foreach ($files as $file) {
+            if ($file->user_id !== Auth::id()) {
+                abort(403);
+            }
+
+            $file->update([
+                'folder_id' => $folder->id,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Files moved successfully');
+    }
     public function toggleStar(Folder $folder)
     {
         if (Gate::denies('update', $folder)) {
@@ -227,4 +267,50 @@ class FolderController extends Controller
             $subfolder->delete();
         }
     }
+
+    public function moveFilesToRoot(Request $request)
+    {
+        $request->validate([
+            'file_ids' => 'required|array',
+            'file_ids.*' => 'exists:files,id',
+        ]);
+
+        $files = File::whereIn('id', $request->file_ids)->get();
+
+        foreach ($files as $file) {
+            if ($file->user_id !== Auth::id()) {
+                abort(403);
+            }
+
+            $file->update([
+                'folder_id' => null,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Files moved to root folder successfully');
+    }
+
+    public function moveFoldersToRoot(Request $request)
+    {
+        $request->validate([
+            'folder_ids' => 'required|array',
+            'folder_ids.*' => 'exists:folders,id',
+        ]);
+
+        $folders = Folder::whereIn('id', $request->folder_ids)->get();
+
+        foreach ($folders as $folder) {
+            if ($folder->user_id !== Auth::id()) {
+                abort(403);
+            }
+
+            
+            $folder->update([
+                'parent_id' => null,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Folders moved to root successfully');
+    }
+
 }

@@ -1,31 +1,28 @@
 import React from 'react';
-import { X, Check, Trash2, FolderTransfer } from 'lucide-react';
+import { X, Check, Trash2 } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 
 const SelectionBar = ({
-                          onSelectAll,
                           onDeleteSelected,
-                          filteredFiles,
-                          filteredFolders
+                          filteredFiles
                       }) => {
     const {
         getSelectionCount,
         clearSelection,
         toggleSelectionMode,
-        selectAllFiles,
-        selectAllFolders
+        selectAllFiles
     } = useMultiSelect();
 
     const totalSelectionCount = getSelectionCount();
 
-    const handleSelectAll = () => {
-        if (filteredFiles && filteredFolders) {
+    
+    const handleSelectAllFiles = () => {
+        if (filteredFiles) {
             selectAllFiles(filteredFiles);
-            selectAllFolders(filteredFolders);
         }
     };
 
-    // Handle exit selection mode
+    
     const handleExitSelection = () => {
         clearSelection();
         toggleSelectionMode();
@@ -50,17 +47,16 @@ const SelectionBar = ({
                         </button>
 
                         <button
-                            onClick={handleSelectAll}
+                            onClick={handleSelectAllFiles}
                             className="text-xs text-gray-700 dark:text-gray-300 hover:text-indigo-700 dark:hover:text-indigo-300 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 flex items-center"
                         >
                             <Check size={14} className="mr-1" />
-                            Select all visible
+                            Select all files
                         </button>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Delete button for bulk deletion */}
                     <button
                         onClick={onDeleteSelected}
                         className="px-3 py-1.5 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800/50 flex items-center gap-1"
@@ -69,7 +65,6 @@ const SelectionBar = ({
                         <span className="hidden sm:inline">Delete</span>
                     </button>
 
-                    {/* Exit selection mode button */}
                     <button
                         onClick={handleExitSelection}
                         className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex items-center gap-1"

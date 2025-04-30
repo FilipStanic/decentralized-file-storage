@@ -1,37 +1,35 @@
-import React from 'react';
-import { Move, Trash2, CheckSquare } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { FolderUp, Trash2, CheckSquare } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
-import { useDragDrop } from '@/Pages/DragDropService.jsx';
 
 const MultiActionPanel = ({
                               showBulkMoveDropdown,
                               setShowBulkMoveDropdown,
                               bulkActionDropdownRef,
-                              destinationFolders,
+                              destinationFolders: originalDestinationFolders,
                               loadingDestinations,
                               handleBulkMove,
                               handleBulkDelete,
-                              filteredFiles,
-                              filteredFolders
+                              filteredFiles
                           }) => {
-    const { clearSelection, getSelectionCount, selectAllFiles, selectAllFolders } = useMultiSelect();
-    const { startDraggingMultiple } = useDragDrop();
+    const { clearSelection, getSelectionCount, selectAllFiles } = useMultiSelect();
+    
+    const [destinationFolders, setDestinationFolders] = useState([]);
 
-    // Handle drag start for multi-selected items
-    const handleMultiDragStart = (e) => {
-        e.preventDefault();
-        const { selectedItems } = useMultiSelect();
-
-        if (getSelectionCount() > 0) {
-            startDraggingMultiple(selectedItems.files, selectedItems.folders, e);
+    
+    useEffect(() => {
+        if (originalDestinationFolders) {
+            const filteredFolders = originalDestinationFolders.filter(folder =>
+                folder.id !== null && folder.name !== 'Root'
+            );
+            setDestinationFolders(filteredFolders);
         }
-    };
+    }, [originalDestinationFolders]);
 
-    // Handle select all on current view - fixed to use filteredFiles and filteredFolders
-    const handleSelectAll = () => {
-        if (filteredFiles && filteredFolders) {
+    
+    const handleSelectAllFiles = () => {
+        if (filteredFiles) {
             selectAllFiles(filteredFiles);
-            selectAllFolders(filteredFolders);
         }
     };
 
@@ -47,36 +45,25 @@ const MultiActionPanel = ({
                 >
                     Clear
                 </button>
-                {filteredFiles && filteredFolders && (
+                {filteredFiles && (
                     <button
-                        onClick={handleSelectAll}
+                        onClick={handleSelectAllFiles}
                         className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
                     >
                         <CheckSquare size={14} />
-                        Select all visible
+                        Select all files
                     </button>
                 )}
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Drag handle for multi-drag */}
-                <div
-                    className="p-2 text-gray-500 dark:text-gray-400 cursor-grab active:cursor-grabbing"
-                    draggable="true"
-                    onDragStart={handleMultiDragStart}
-                    title="Drag selected items"
-                >
-                    <Move size={18} />
-                </div>
-
-                {/* Move button with dropdown */}
                 <div className="relative">
                     <button
                         onClick={() => setShowBulkMoveDropdown(!showBulkMoveDropdown)}
                         className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                         title="Move selected items"
                     >
-                        <Move size={18} />
+                        <FolderUp size={18} />
                     </button>
 
                     {showBulkMoveDropdown && (
@@ -92,6 +79,17 @@ const MultiActionPanel = ({
                                 <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                             ) : (
                                 <>
+                                    <button
+                                        onClick={() => handleBulkMove(null)}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        Root
+                                    </button>
+
+                                    {destinationFolders.length > 0 && (
+                                        <div className="border-t dark:border-gray-700 my-1"></div>
+                                    )}
+
                                     {destinationFolders.map(folder => (
                                         <button
                                             key={folder.id}
@@ -102,9 +100,9 @@ const MultiActionPanel = ({
                                         </button>
                                     ))}
 
-                                    {destinationFolders.length === 0 && (
+                                    {destinationFolders.length === 0 && !(
                                         <div className="px-4 py-2 text-sm text-gray-500">
-                                            No available folders to move to
+                                            No other folders available
                                         </div>
                                     )}
                                 </>
@@ -113,7 +111,6 @@ const MultiActionPanel = ({
                     )}
                 </div>
 
-                {/* Delete button for bulk deletion */}
                 <button
                     onClick={handleBulkDelete}
                     className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"

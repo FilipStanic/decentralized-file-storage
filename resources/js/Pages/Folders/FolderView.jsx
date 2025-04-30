@@ -7,15 +7,12 @@ import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
-
-
 import FolderBreadcrumb from '@/Pages/Folders/FolderBreadcrumb';
 import FolderViewToolbar from '@/Pages/Folders/FolderViewToolbar';
 import MultiActionPanel from '@/Pages/Folders/MultiActionPanel';
 import FolderSection from '@/Pages/Folders/FolderSection';
 import FileListSection from '@/Pages/Files/FileListSection.jsx';
 import EmptySearchResult from '@/Pages/Folders/EmptySearchResult';
-
 import UploadModal from '@/Pages/UploadModal';
 import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
 import RenameFolderModal from '@/Pages/Folders/RenameFolderModal.jsx';
@@ -24,19 +21,19 @@ import FileDetailModal from '@/Pages/Files/FileDetailModal.jsx';
 import SelectionBar from './SelectionBar';
 
 export default function FolderView({ auth, currentFolder, breadcrumbs, folders, files }) {
-    // Modal states
+    
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
 
-    // Item states
+    
     const [folderToRename, setFolderToRename] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
 
-    // UI states
+    
     const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(null);
@@ -44,30 +41,30 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
 
-    // Form states
+    
     const [data, setData] = useState({ file: null });
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [progress, setProgress] = useState(null);
 
-    // Search and filtering
+    
     const { searchTerm, isSearching } = useSearch();
     const [filteredFolders, setFilteredFolders] = useState(folders);
     const [filteredFiles, setFilteredFiles] = useState(files);
     const [totalResults, setTotalResults] = useState(0);
 
-    // Refs
+    
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const bulkActionDropdownRef = useRef(null);
 
-    // Multi-select functionality
-    const { getSelectionCount, clearSelection, selectedItems, toggleSelectionMode } = useMultiSelect();
+    
+    const { getSelectionCount, clearSelection, selectedItems, toggleSelectionMode, isSelectionMode } = useMultiSelect();
 
-    // Check authentication
+    
     const isAuthenticated = auth && auth.user;
 
-    // Load available folders for move operations
+    
     useEffect(() => {
         setLoadingDestinations(true);
 
@@ -83,7 +80,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             });
     }, [currentFolder]);
 
-    // Handle outside clicks to close dropdowns
+    
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -98,7 +95,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef, bulkActionDropdownRef]);
 
-    // Filter folders and files based on search
+    
     useEffect(() => {
         if (!searchTerm.trim()) {
             setFilteredFolders(folders);
@@ -114,7 +111,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         setTotalResults(matchingFolders.length + matchingFiles.length);
     }, [searchTerm, folders, files]);
 
-    // Update multi-action panel visibility based on selection count
+    
     const [showMultiActionPanel, setShowMultiActionPanel] = useState(false);
 
     useEffect(() => {
@@ -122,7 +119,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         setShowMultiActionPanel(selectionCount > 0 && isSelectionMode);
     }, [selectedItems, getSelectionCount, isSelectionMode]);
 
-    // Handler functions
+    
     const handleMoveFile = (fileId, folderId) => {
         setDropdownOpen(null);
 
@@ -140,57 +137,119 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-    // Handle bulk move of selected items
+
     const handleBulkMove = (destinationFolderId) => {
         setShowBulkMoveDropdown(false);
 
-        // Move selected files
+        
         if (selectedItems.files.length > 0) {
             const fileIds = selectedItems.files.map(file => file.id);
-            router.post(route('folders.move-files', destinationFolderId), {
-                file_ids: fileIds
-            }, {
-                preserveScroll: true
-            });
+
+            
+            if (destinationFolderId === null) {
+                
+                router.post(route('folders.move-files-to-root'), {
+                    file_ids: fileIds
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        
+                        router.reload({ only: ['files'] });
+                        if (selectedItems.folders.length === 0) {
+                            clearSelection();
+                            toggleSelectionMode();
+                        }
+                    },
+                    onError: (errors) => {
+                        console.error('Error moving files to root:', errors);
+                        alert('Failed to move files to root folder. Please try again.');
+                    }
+                });
+            } else {
+                
+                router.post(route('folders.move-files', destinationFolderId), {
+                    file_ids: fileIds
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        
+                        router.reload({ only: ['files'] });
+                        if (selectedItems.folders.length === 0) {
+                            clearSelection();
+                            toggleSelectionMode();
+                        }
+                    },
+                    onError: (errors) => {
+                        console.error('Error moving files:', errors);
+                        alert('Failed to move files. Please try again.');
+                    }
+                });
+            }
         }
 
-        // Move selected folders
+        
         if (selectedItems.folders.length > 0) {
             const folderIds = selectedItems.folders.map(folder => folder.id);
-            router.post(route('folders.move-folders', destinationFolderId), {
-                folder_ids: folderIds
-            }, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    // Refresh view after operations complete
-                    router.reload();
-                    clearSelection();
-                    toggleSelectionMode();
-                }
-            });
+
+            
+            if (destinationFolderId === null) {
+                
+                router.post(route('folders.move-folders-to-root'), {
+                    folder_ids: folderIds
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        
+                        router.reload();
+                        clearSelection();
+                        toggleSelectionMode();
+                    },
+                    onError: (errors) => {
+                        console.error('Error moving folders to root:', errors);
+                        alert('Failed to move folders to root folder. Please try again.');
+                    }
+                });
+            } else {
+                
+                router.post(route('folders.move-folders', destinationFolderId), {
+                    folder_ids: folderIds
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        
+                        router.reload();
+                        clearSelection();
+                        toggleSelectionMode();
+                    },
+                    onError: (errors) => {
+                        console.error('Error moving folders:', errors);
+                        alert('Failed to move folders. Please try again.');
+                    }
+                });
+            }
         }
     };
 
-    // Handle bulk deletion of selected items
+    
     const handleBulkDelete = () => {
-        // Confirm before deletion
+        
         if (!confirm(`Move ${getSelectionCount()} selected items to trash?`)) {
             return;
         }
 
-        // Move files to trash
+        
         selectedItems.files.forEach(file => {
             router.delete(route('files.destroy', file.id), {
                 preserveScroll: true
             });
         });
 
-        // Move folders to trash
+        
         selectedItems.folders.forEach((folder, index) => {
             router.delete(route('folders.destroy', folder.id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    // Refresh after all operations complete
+                    
                     if (index === selectedItems.folders.length - 1) {
                         router.reload();
                         clearSelection();
@@ -198,6 +257,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }
             });
         });
+    };
+
+    const handleSelectAll = () => {
+        
+        if (filteredFiles) {
+            selectAllFiles(filteredFiles);
+        }
     };
 
     const handleUpload = () => setShowUploadModal(true);
@@ -323,7 +389,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-    // Render the view
+    
     return (
         <>
             <Head title={currentFolder ? currentFolder.name : 'All Folders'} />
@@ -340,8 +406,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     <Header isAuthenticated={isAuthenticated} auth={auth} onUserDropdownToggle={() => {}} />
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
 
-                    {/* Top action bar */}
-
                     {!isSelectionMode && (
                         <FolderViewToolbar
                             isSearching={isSearching}
@@ -353,27 +417,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                         />
                     )}
 
-                    {/* Selection bar when in selection mode */}
                     {isSelectionMode && (
                         <SelectionBar
-                            onSelectAll={handleSelectAll}
                             onDeleteSelected={handleBulkDelete}
                             filteredFiles={filteredFiles}
-                            filteredFolders={filteredFolders}
                         />
                     )}
 
-
-                    <FolderViewToolbar
-                        isSearching={isSearching}
-                        currentFolder={currentFolder}
-                        searchTerm={searchTerm}
-                        totalResults={totalResults}
-                        handleNewFolder={handleNewFolder}
-                        handleUpload={handleUpload}
-                    />
-
-                    {/* Multi-action panel */}
                     {showMultiActionPanel && (
                         <MultiActionPanel
                             showBulkMoveDropdown={showBulkMoveDropdown}
@@ -384,18 +434,15 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                             handleBulkMove={handleBulkMove}
                             handleBulkDelete={handleBulkDelete}
                             filteredFiles={filteredFiles}
-                            filteredFolders={filteredFolders}
                         />
                     )}
 
-                    {/* Folders section */}
                     <FolderSection
                         filteredFolders={filteredFolders}
                         isSearching={isSearching}
                         onRenameClick={handleRenameClick}
                     />
 
-                    {/* Files section */}
                     <FileListSection
                         filteredFiles={filteredFiles}
                         isSearching={isSearching}
@@ -412,7 +459,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                         dropdownRef={dropdownRef}
                     />
 
-                    {/* Empty search results */}
                     {isSearching && totalResults === 0 && (
                         <EmptySearchResult
                             searchTerm={searchTerm}
@@ -422,7 +468,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 </div>
             </div>
 
-            {/* Modals */}
             <UploadModal
                 isOpen={showUploadModal}
                 onClose={() => {

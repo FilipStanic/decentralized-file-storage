@@ -11,44 +11,44 @@ export const useMultiSelect = () => {
 };
 
 export const MultiSelectProvider = ({ children }) => {
-    // Track selected items (files and folders)
+    
     const [selectedItems, setSelectedItems] = useState({
         files: [],
         folders: []
     });
 
-    // Track if selection mode is active
+    
     const [isSelectionMode, setIsSelectionMode] = useState(false);
 
-    // Track if shift key is pressed (for range selection)
+    
     const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
 
-    // Track last selected item for range selection
+    
     const [lastSelectedItem, setLastSelectedItem] = useState(null);
 
-    // Toggle selection mode
+    
     const toggleSelectionMode = useCallback(() => {
         setIsSelectionMode(prev => !prev);
         if (isSelectionMode) {
-            // Clear selections when exiting selection mode
+            
             clearSelection();
         }
     }, [isSelectionMode]);
 
-    // Clear all selections
+    
     const clearSelection = useCallback(() => {
         setSelectedItems({ files: [], folders: [] });
         setLastSelectedItem(null);
     }, []);
 
-    // Select or deselect a file
+    
     const toggleFileSelection = useCallback((file) => {
         setSelectedItems(prevState => {
             const isSelected = prevState.files.some(f => f.id === file.id);
 
-            // If shift key is pressed and we have a previous selection, select range
+            
             if (isShiftKeyPressed && lastSelectedItem && lastSelectedItem.type === 'file') {
-                // For simplicity, we're not implementing the full range selection here
+                
                 return {
                     ...prevState,
                     files: isSelected
@@ -57,7 +57,7 @@ export const MultiSelectProvider = ({ children }) => {
                 };
             }
 
-            // Normal toggle selection
+            
             return {
                 ...prevState,
                 files: isSelected
@@ -66,18 +66,18 @@ export const MultiSelectProvider = ({ children }) => {
             };
         });
 
-        // Update last selected item
+        
         setLastSelectedItem({ type: 'file', id: file.id });
     }, [isShiftKeyPressed, lastSelectedItem]);
 
-    // Select or deselect a folder
+    
     const toggleFolderSelection = useCallback((folder) => {
         setSelectedItems(prevState => {
             const isSelected = prevState.folders.some(f => f.id === folder.id);
 
-            // If shift key is pressed and we have a previous selection, select range
+            
             if (isShiftKeyPressed && lastSelectedItem && lastSelectedItem.type === 'folder') {
-                // For simplicity, we're not implementing the full range selection here
+                
                 return {
                     ...prevState,
                     folders: isSelected
@@ -86,7 +86,7 @@ export const MultiSelectProvider = ({ children }) => {
                 };
             }
 
-            // Normal toggle selection
+            
             return {
                 ...prevState,
                 folders: isSelected
@@ -95,15 +95,15 @@ export const MultiSelectProvider = ({ children }) => {
             };
         });
 
-        // Update last selected item
+        
         setLastSelectedItem({ type: 'folder', id: folder.id });
     }, [isShiftKeyPressed, lastSelectedItem]);
 
-    // Select all files - FIXED to check if files is an array
+    
     const selectAllFiles = useCallback((files) => {
         if (!files) return;
 
-        // Ensure files is an array before spreading
+        
         const filesArray = Array.isArray(files) ? files : [];
 
         setSelectedItems(prev => ({
@@ -112,11 +112,11 @@ export const MultiSelectProvider = ({ children }) => {
         }));
     }, []);
 
-    // Select all folders - FIXED to check if folders is an array
+    
     const selectAllFolders = useCallback((folders) => {
         if (!folders) return;
 
-        // Ensure folders is an array before spreading
+        
         const foldersArray = Array.isArray(folders) ? folders : [];
 
         setSelectedItems(prev => ({
@@ -125,22 +125,22 @@ export const MultiSelectProvider = ({ children }) => {
         }));
     }, []);
 
-    // Check if file is selected
+    
     const isFileSelected = useCallback((fileId) => {
         return selectedItems.files.some(file => file.id === fileId);
     }, [selectedItems.files]);
 
-    // Check if folder is selected
+    
     const isFolderSelected = useCallback((folderId) => {
         return selectedItems.folders.some(folder => folder.id === folderId);
     }, [selectedItems.folders]);
 
-    // Get total number of selected items
+    
     const getSelectionCount = useCallback(() => {
         return selectedItems.files.length + selectedItems.folders.length;
     }, [selectedItems]);
 
-    // Handle keyboard events for shift key
+    
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Shift') {
