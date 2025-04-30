@@ -1,5 +1,5 @@
 import React from 'react';
-import { Move, Trash2 } from 'lucide-react';
+import { Move, Trash2, CheckSquare } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 import { useDragDrop } from '@/Pages/DragDropService.jsx';
 
@@ -10,7 +10,9 @@ const MultiActionPanel = ({
                               destinationFolders,
                               loadingDestinations,
                               handleBulkMove,
-                              handleBulkDelete
+                              handleBulkDelete,
+                              filteredFiles,
+                              filteredFolders
                           }) => {
     const { clearSelection, getSelectionCount, selectAllFiles, selectAllFolders } = useMultiSelect();
     const { startDraggingMultiple } = useDragDrop();
@@ -25,10 +27,12 @@ const MultiActionPanel = ({
         }
     };
 
-    // Handle select all on current view
+    // Handle select all on current view - fixed to use filteredFiles and filteredFolders
     const handleSelectAll = () => {
-        selectAllFiles();
-        selectAllFolders();
+        if (filteredFiles && filteredFolders) {
+            selectAllFiles(filteredFiles);
+            selectAllFolders(filteredFolders);
+        }
     };
 
     return (
@@ -43,12 +47,15 @@ const MultiActionPanel = ({
                 >
                     Clear
                 </button>
-                <button
-                    onClick={handleSelectAll}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-                >
-                    Select all
-                </button>
+                {filteredFiles && filteredFolders && (
+                    <button
+                        onClick={handleSelectAll}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
+                    >
+                        <CheckSquare size={14} />
+                        Select all visible
+                    </button>
+                )}
             </div>
 
             <div className="flex items-center gap-2">

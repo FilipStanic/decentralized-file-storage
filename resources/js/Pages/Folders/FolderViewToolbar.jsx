@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, Square, Plus } from 'lucide-react';
+import { CheckSquare, Square, FolderPlus, Upload, ArrowLeft } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 
 const FolderViewToolbar = ({
@@ -7,9 +7,19 @@ const FolderViewToolbar = ({
                                currentFolder,
                                searchTerm,
                                totalResults,
-                               handleNewFolder
+                               handleNewFolder,
+                               handleUpload
                            }) => {
-    const { isSelectionMode, toggleSelectionMode } = useMultiSelect();
+    const {
+        isSelectionMode,
+        toggleSelectionMode,
+        selectedItems,
+        clearSelection,
+        selectAllVisible
+    } = useMultiSelect();
+
+    // Calculate total selected items
+    const totalSelected = selectedItems?.files?.length + selectedItems?.folders?.length || 0;
 
     return (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
@@ -25,35 +35,33 @@ const FolderViewToolbar = ({
                     </p>
                 )}
             </div>
+
             <div className="flex items-center space-x-2 flex-shrink-0">
-                {/* Selection mode toggle */}
+                {/* Selection mode toggle - moved to left side of toolbar */}
+                {!isSelectionMode ? (
+                    <button
+                        onClick={toggleSelectionMode}
+                        className="flex items-center justify-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+                        title="Enter selection mode"
+                    >
+                        <Square size={16} />
+                        <span>Select items</span>
+                    </button>
+                ) : null}
+
                 <button
-                    onClick={toggleSelectionMode}
-                    className={`flex items-center justify-center gap-1 px-3 py-1.5 ${
-                        isSelectionMode
-                            ? 'bg-indigo-600 text-white'
-                            : 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                    } rounded-md hover:bg-opacity-90 text-sm`}
-                    title={isSelectionMode ? "Exit selection mode" : "Enter selection mode"}
+                    onClick={handleUpload}
+                    className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
                 >
-                    {isSelectionMode ? (
-                        <>
-                            <CheckSquare size={16} />
-                            <span>Exit selection</span>
-                        </>
-                    ) : (
-                        <>
-                            <Square size={16} />
-                            <span>Select items</span>
-                        </>
-                    )}
+                    <Upload size={16} className="hidden sm:block" />
+                    <span>Upload</span>
                 </button>
 
                 <button
                     onClick={handleNewFolder}
-                    className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+                    className="flex items-center justify-center gap-1 px-3 sm:px-4 py-1.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
                 >
-                    <Plus size={16} className="hidden sm:block" />
+                    <FolderPlus size={16} className="hidden sm:block" />
                     <span>New Folder</span>
                 </button>
             </div>

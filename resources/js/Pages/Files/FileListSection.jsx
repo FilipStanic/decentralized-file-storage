@@ -1,5 +1,7 @@
 import React from 'react';
 import FileListItem from '@/Pages/Files/FileListItem';
+import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
+import { Trash2, CheckSquare } from 'lucide-react';
 
 const FileListSection = ({
                              filteredFiles,
@@ -16,6 +18,21 @@ const FileListSection = ({
                              destinationFolders,
                              dropdownRef
                          }) => {
+    const { isSelectionMode } = useMultiSelect();
+
+    // Add selection checkboxes to the table header when in selection mode
+    const renderTableHeader = () => (
+        <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
+            <div className="col-span-5 md:col-span-6 flex items-center gap-2">
+                {isSelectionMode && <span className="w-5"></span>}
+                Name
+            </div>
+            <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
+            <div className="col-span-2 md:col-span-2 hidden md:flex items-center gap-2">Modified</div>
+            <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
+        </div>
+    );
+
     return (
         <div className="mb-8">
             <h2 className="text-lg font-medium mb-4 dark:text-white">
@@ -23,12 +40,7 @@ const FileListSection = ({
             </h2>
             {filteredFiles.length > 0 ? (
                 <div className="border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                    <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
-                        <div className="col-span-5 md:col-span-6 flex items-center gap-2">Name</div>
-                        <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
-                        <div className="col-span-2 md:col-span-2 hidden md:flex items-center gap-2">Modified</div>
-                        <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-2">Actions</div>
-                    </div>
+                    {renderTableHeader()}
 
                     {filteredFiles.map((file) => (
                         <FileListItem
@@ -43,6 +55,7 @@ const FileListSection = ({
                             loadingDestinations={loadingDestinations}
                             destinationFolders={destinationFolders}
                             dropdownRef={dropdownRef}
+                            isSelectionMode={isSelectionMode}
                         />
                     ))}
                 </div>

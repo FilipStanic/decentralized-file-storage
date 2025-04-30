@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 
-
 const MultiSelectContext = createContext();
 
 export const useMultiSelect = () => {
@@ -49,8 +48,7 @@ export const MultiSelectProvider = ({ children }) => {
 
             // If shift key is pressed and we have a previous selection, select range
             if (isShiftKeyPressed && lastSelectedItem && lastSelectedItem.type === 'file') {
-                // Implement range selection logic here
-                // For simplicity, we're not implementing the full range selection in this example
+                // For simplicity, we're not implementing the full range selection here
                 return {
                     ...prevState,
                     files: isSelected
@@ -79,7 +77,7 @@ export const MultiSelectProvider = ({ children }) => {
 
             // If shift key is pressed and we have a previous selection, select range
             if (isShiftKeyPressed && lastSelectedItem && lastSelectedItem.type === 'folder') {
-                // Implement range selection logic here
+                // For simplicity, we're not implementing the full range selection here
                 return {
                     ...prevState,
                     folders: isSelected
@@ -101,19 +99,29 @@ export const MultiSelectProvider = ({ children }) => {
         setLastSelectedItem({ type: 'folder', id: folder.id });
     }, [isShiftKeyPressed, lastSelectedItem]);
 
-    // Select all files
+    // Select all files - FIXED to check if files is an array
     const selectAllFiles = useCallback((files) => {
+        if (!files) return;
+
+        // Ensure files is an array before spreading
+        const filesArray = Array.isArray(files) ? files : [];
+
         setSelectedItems(prev => ({
             ...prev,
-            files: [...files]
+            files: [...filesArray]
         }));
     }, []);
 
-    // Select all folders
+    // Select all folders - FIXED to check if folders is an array
     const selectAllFolders = useCallback((folders) => {
+        if (!folders) return;
+
+        // Ensure folders is an array before spreading
+        const foldersArray = Array.isArray(folders) ? folders : [];
+
         setSelectedItems(prev => ({
             ...prev,
-            folders: [...folders]
+            folders: [...foldersArray]
         }));
     }, []);
 

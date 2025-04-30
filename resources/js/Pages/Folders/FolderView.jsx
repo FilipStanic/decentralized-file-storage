@@ -21,6 +21,7 @@ import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
 import RenameFolderModal from '@/Pages/Folders/RenameFolderModal.jsx';
 import ConfirmDeleteModal from '@/Pages/ConfirmDeleteModal.jsx';
 import FileDetailModal from '@/Pages/Files/FileDetailModal.jsx';
+import SelectionBar from './SelectionBar';
 
 export default function FolderView({ auth, currentFolder, breadcrumbs, folders, files }) {
     // Modal states
@@ -118,8 +119,8 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
 
     useEffect(() => {
         const selectionCount = getSelectionCount();
-        setShowMultiActionPanel(selectionCount > 0);
-    }, [selectedItems, getSelectionCount]);
+        setShowMultiActionPanel(selectionCount > 0 && isSelectionMode);
+    }, [selectedItems, getSelectionCount, isSelectionMode]);
 
     // Handler functions
     const handleMoveFile = (fileId, folderId) => {
@@ -193,7 +194,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     if (index === selectedItems.folders.length - 1) {
                         router.reload();
                         clearSelection();
-                        toggleSelectionMode();
                     }
                 }
             });
@@ -341,12 +341,36 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
 
                     {/* Top action bar */}
+
+                    {!isSelectionMode && (
+                        <FolderViewToolbar
+                            isSearching={isSearching}
+                            currentFolder={currentFolder}
+                            searchTerm={searchTerm}
+                            totalResults={totalResults}
+                            handleNewFolder={handleNewFolder}
+                            handleUpload={handleUpload}
+                        />
+                    )}
+
+                    {/* Selection bar when in selection mode */}
+                    {isSelectionMode && (
+                        <SelectionBar
+                            onSelectAll={handleSelectAll}
+                            onDeleteSelected={handleBulkDelete}
+                            filteredFiles={filteredFiles}
+                            filteredFolders={filteredFolders}
+                        />
+                    )}
+
+
                     <FolderViewToolbar
                         isSearching={isSearching}
                         currentFolder={currentFolder}
                         searchTerm={searchTerm}
                         totalResults={totalResults}
                         handleNewFolder={handleNewFolder}
+                        handleUpload={handleUpload}
                     />
 
                     {/* Multi-action panel */}
@@ -359,6 +383,8 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                             loadingDestinations={loadingDestinations}
                             handleBulkMove={handleBulkMove}
                             handleBulkDelete={handleBulkDelete}
+                            filteredFiles={filteredFiles}
+                            filteredFolders={filteredFolders}
                         />
                     )}
 

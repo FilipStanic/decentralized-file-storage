@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { router } from '@inertiajs/core';
 import { FolderIcon, Star, Trash2, Pencil, MoreHorizontal, MoveIcon } from 'lucide-react';
@@ -12,6 +12,8 @@ const FolderItem = ({ folder, onRenameClick }) => {
     const [isStarred, setIsStarred] = useState(folder?.starred || false);
     const [deleting, setDeleting] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+    const buttonRef = useRef(null);
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(false);
 
@@ -31,6 +33,19 @@ const FolderItem = ({ folder, onRenameClick }) => {
         isDragging,
         draggedItem
     } = useDragDrop();
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
+                (!buttonRef.current || !buttonRef.current.contains(event.target))) {
+                setDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [dropdownRef, buttonRef]);
 
     // Check if this folder is selected
     const isSelected = isFolderSelected(folder.id);
@@ -160,7 +175,7 @@ const FolderItem = ({ folder, onRenameClick }) => {
                             <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />
                         </div>
                     </Link>
-                    <div className="flex items-center space-x-0.5">
+                    <div className="flex items-center space-x-0.5 relative">
                         <button
                             onClick={handleRename}
                             className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -169,6 +184,7 @@ const FolderItem = ({ folder, onRenameClick }) => {
                             <Pencil size={18} />
                         </button>
                         <button
+                            ref={buttonRef}
                             onClick={toggleDropdown}
                             className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                             title="More options"
@@ -176,7 +192,10 @@ const FolderItem = ({ folder, onRenameClick }) => {
                             <MoreHorizontal size={18} />
                         </button>
                         {dropdownOpen && (
-                            <div className="absolute mt-8 right-0 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border dark:border-gray-700">
+                            <div
+                                ref={dropdownRef}
+                                className="absolute top-8 right-0 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border dark:border-gray-700"
+                            >
                                 <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
                                     Move to folder
                                 </div>
