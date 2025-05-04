@@ -11,14 +11,13 @@ import AuthenticatedContentView from './AuthenticatedContentView';
 import { useSearch } from './Context/SearchContext.jsx';
 
 export const HomePage = ({
-                             auth,
-                             recentFiles = [],
-                             quickAccessFiles = []
-                         }) => {
+    auth,
+    recentFiles = [],
+    quickAccessFiles = []
+}) => {
     const [expanded, setExpanded] = useState(true);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
-    const [dragActive, setDragActive] = useState(false);
     const [processingFolder, setProcessingFolder] = useState(false);
     const [currentFolderId, setCurrentFolderId] = useState(null);
 
@@ -30,16 +29,12 @@ export const HomePage = ({
     const modalRef = useRef(null);
 
     const isAuthenticated = auth && auth.user;
-
     
     const { searchTerm, isSearching, setSearchTerm } = useSearch();
 
     const uploadForm = useForm({
         file: null,
     });
-
-    
-
 
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -103,7 +98,9 @@ export const HomePage = ({
         if (type === 'folder') {
             setShowFolderModal(true);
         } else {
+            
             uploadForm.reset();
+            fileInputRef.current.value = "";
             setShowUploadModal(true);
         }
     };
@@ -111,6 +108,9 @@ export const HomePage = ({
     const closeUploadModal = () => {
         setShowUploadModal(false);
         uploadForm.reset();
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     }
 
     const handleFileUpload = () => {
@@ -127,21 +127,39 @@ export const HomePage = ({
     const handleSubmitUpload = (e) => {
         if (e) e.preventDefault();
         if (!uploadForm.data.file) return;
-        const formData = { ...uploadForm.data };
+        
+        const formData = new FormData();
+        formData.append('file', uploadForm.data.file);
+        
         if (currentFolderId) {
-            formData.folder_id = currentFolderId;
+            formData.append('folder_id', currentFolderId);
         }
 
-        uploadForm.post(route('files.store'), {
-            data: formData,
-            preserveScroll: true,
-            onSuccess: () => {
-                closeUploadModal();
-                router.reload({ only: ['recentFiles', 'quickAccessFiles'] });
+        axios.post(route('files.store'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
-            onError: (errors) => {
-                console.error("Upload errors:", errors);
-            },
+            onUploadProgress: p => {
+                const progress = Math.round((p.loaded * 100) / p.total);
+                uploadForm.setProgress(progress);
+            }
+        })
+        .then(response => {
+            closeUploadModal();
+            
+            router.reload({ only: ['recentFiles', 'quickAccessFiles'] });
+        })
+        .catch(error => {
+            console.error("Upload errors:", error);
+            if (error.response?.data?.errors) {
+                uploadForm.setError('file', error.response.data.errors.file);
+            } else {
+                uploadForm.setError('file', "Upload failed. Please try again.");
+            }
+        })
+        .finally(() => {
+            uploadForm.setProcessing(false);
         });
     };
 
@@ -152,39 +170,23 @@ export const HomePage = ({
             postData.parent_id = currentFolderId;
         }
 
-        axios.post(route('folders.store'), postData)
-            .then(() => {
-                setShowFolderModal(false);
-                localStorage.removeItem('sidebarData');
-                localStorage.removeItem('sidebarDataTimestamp');
-                window.location.reload();
-            })
-            .catch(error => {
-                console.error('Error creating folder:', error);
-            })
-            .finally(() => {
-                setProcessingFolder(false);
-            });
-    };
-
-    const handleDrag = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setDragActive(true);
-        } else if (e.type === 'dragleave') {
-            setDragActive(false);
-        }
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            uploadForm.setData('file', e.dataTransfer.files[0]);
-            setShowUploadModal(true);
-        }
+        axios.post(route('folders.store'), postData, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        })
+        .then(() => {
+            setShowFolderModal(false);
+            localStorage.removeItem('sidebarData');
+            localStorage.removeItem('sidebarDataTimestamp');
+            router.reload({ only: ['sharedSidebarFolders'] });
+        })
+        .catch(error => {
+            console.error('Error creating folder:', error);
+        })
+        .finally(() => {
+            setProcessingFolder(false);
+        });
     };
 
     const handleUploadFromWelcome = () => {
@@ -216,11 +218,8 @@ export const HomePage = ({
                         uniqueResultsCount={uniqueResultsCount}
                         handleCreateNew={handleCreateNew}
                         uploadFileData={uploadForm.data.file}
-                        dragActive={dragActive}
-                        handleDrag={handleDrag}
-                        handleDrop={handleDrop}
-                        handleFileUpload={handleFileUpload}
                         fileInputRef={fileInputRef}
+                        handleFileUpload={handleFileUpload}
                         handleUploadFromWelcome={handleUploadFromWelcome}
                         hasAnyFilesInitially={recentFiles.length > 0 || quickAccessFiles.length > 0}
                     />
@@ -238,9 +237,6 @@ export const HomePage = ({
                 isOpen={showUploadModal}
                 onClose={closeUploadModal}
                 file={uploadForm.data.file}
-                dragActive={dragActive}
-                handleDrag={handleDrag}
-                handleDrop={handleDrop}
                 handleFileUpload={handleFileUpload}
                 handleFileChange={handleFileChange}
                 handleSubmit={handleSubmitUpload}

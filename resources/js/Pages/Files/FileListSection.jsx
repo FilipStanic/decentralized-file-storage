@@ -1,30 +1,41 @@
 import React from 'react';
 import FileListItem from '@/Pages/Files/FileListItem';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
-import { Trash2, CheckSquare } from 'lucide-react';
 
 const FileListSection = ({
-                             filteredFiles,
-                             isSearching,
-                             searchTerm,
-                             currentFolder,
-                             dropdownOpen,
-                             toggleDropdown,
-                             handleShowDetails,
-                             handleFileToggleStar,
-                             handleDeleteClick,
-                             handleMoveFile,
-                             loadingDestinations,
-                             destinationFolders,
-                             dropdownRef
-                         }) => {
-    const { isSelectionMode } = useMultiSelect();
+    filteredFiles,
+    isSearching,
+    searchTerm,
+    currentFolder,
+    handleShowDetails,
+    handleFileToggleStar,
+    handleDeleteClick,
+    handleMoveFile
+}) => {
+    const { isSelectionMode, selectAllFiles, clearSelection } = useMultiSelect();
 
-    // Add selection checkboxes to the table header when in selection mode
+    // Simple table header
     const renderTableHeader = () => (
         <div className="grid grid-cols-12 px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300">
             <div className="col-span-5 md:col-span-6 flex items-center gap-2">
-                {isSelectionMode && <span className="w-5"></span>}
+                {isSelectionMode && (
+                    <input
+                        type="checkbox"
+                        onChange={() => {
+                            const allSelected = filteredFiles.length > 0 && 
+                                filteredFiles.every(file => isFileSelected(file.id));
+                            
+                            if (allSelected) {
+                                clearSelection();
+                            } else {
+                                selectAllFiles(filteredFiles);
+                            }
+                        }}
+                        checked={filteredFiles.length > 0 && 
+                            filteredFiles.every(file => isFileSelected(file.id))}
+                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                )}
                 Name
             </div>
             <div className="col-span-3 md:col-span-2 hidden sm:flex items-center gap-2">Size</div>
@@ -46,16 +57,10 @@ const FileListSection = ({
                         <FileListItem
                             key={file.id}
                             file={file}
-                            dropdownOpen={dropdownOpen}
-                            toggleDropdown={toggleDropdown}
                             handleShowDetails={handleShowDetails}
                             handleFileToggleStar={handleFileToggleStar}
                             handleDeleteClick={handleDeleteClick}
                             handleMoveFile={handleMoveFile}
-                            loadingDestinations={loadingDestinations}
-                            destinationFolders={destinationFolders}
-                            dropdownRef={dropdownRef}
-                            isSelectionMode={isSelectionMode}
                         />
                     ))}
                 </div>

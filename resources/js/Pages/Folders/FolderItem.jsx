@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { router } from '@inertiajs/core';
-import { FolderIcon, Star, Trash2, Pencil, MoreHorizontal, MoveIcon } from 'lucide-react';
+import { FolderIcon, Star, Trash2, Pencil, MoreHorizontal } from 'lucide-react';
 import DeleteFolderModal from './DeleteFolderModal.jsx';
 import axios from 'axios';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
-import { useDragDrop } from '@/Pages/DragDropService.jsx';
 
 const FolderItem = ({ folder, onRenameClick }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -24,15 +23,8 @@ const FolderItem = ({ folder, onRenameClick }) => {
         isFolderSelected
     } = useMultiSelect();
 
-    // Get drag and drop functionality
-    const {
-        startDraggingFolder,
-        handleDropInFolder,
-        canDropIntoFolder,
-        handleFolderDragOver,
-        isDragging,
-        draggedItem
-    } = useDragDrop();
+    // Check if this folder is selected
+    const isSelected = isFolderSelected(folder.id);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -46,12 +38,6 @@ const FolderItem = ({ folder, onRenameClick }) => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [dropdownRef, buttonRef]);
-
-    // Check if this folder is selected
-    const isSelected = isFolderSelected(folder.id);
-
-    // Check if this folder can be a drop target while something is being dragged
-    const isDropTarget = isDragging && canDropIntoFolder(folder);
 
     const handleToggleStar = (e) => {
         e.preventDefault();
@@ -123,53 +109,20 @@ const FolderItem = ({ folder, onRenameClick }) => {
         });
     };
 
-    // Handle selection click
-    const handleSelectionClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isSelectionMode) {
-            toggleFolderSelection(folder);
-        }
-    };
-
-    // Handle drag start
-    const handleDragStart = (e) => {
-        e.stopPropagation();
-        if (isSelectionMode) return; // Don't start drag in selection mode
-
-        startDraggingFolder(folder, e);
-        e.dataTransfer.setData('text/plain', JSON.stringify({
-            type: 'folder',
-            id: folder.id
-        }));
-    };
-
-    // Handle drag over
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        handleFolderDragOver(folder, e);
-    };
-
-    // Handle drop
-    const handleDrop = (e) => {
-        e.preventDefault();
-        handleDropInFolder(folder.id, e);
-    };
-
     return (
         <>
-            <div
-                className={`p-4 border ${isDropTarget ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'dark:border-gray-700'}
-                           rounded-lg hover:shadow-md transition-shadow flex flex-col bg-white dark:bg-gray-800
-                           ${isSelected ? 'ring-2 ring-indigo-500 dark:ring-indigo-400' : ''}`}
-                onClick={isSelectionMode ? handleSelectionClick : undefined}
-                draggable="true"
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-            >
+            <div className={`p-4 border dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow flex flex-col bg-white dark:bg-gray-800 ${isSelected ? 'ring-2 ring-indigo-500 dark:ring-indigo-400' : ''}`}>
                 <div className="flex items-start justify-between mb-3">
+                    {isSelectionMode && (
+                        <div className="mt-1 mr-2">
+                            <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleFolderSelection(folder)}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                        </div>
+                    )}
                     <Link href={route('folders.show', folder.id)} className="flex-1">
                         <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                             <FolderIcon size={24} style={{ color: folder.color || '#6366F1' }} />

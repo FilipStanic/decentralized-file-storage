@@ -1,11 +1,11 @@
 import React from 'react';
-import { X, Check, Trash2 } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 
 const SelectionBar = ({
-                          onDeleteSelected,
-                          filteredFiles
-                      }) => {
+    onDeleteSelected,
+    filteredFiles = []
+}) => {
     const {
         getSelectionCount,
         clearSelection,
@@ -14,14 +14,10 @@ const SelectionBar = ({
     } = useMultiSelect();
 
     const totalSelectionCount = getSelectionCount();
-
     
-    const handleSelectAllFiles = () => {
-        if (filteredFiles) {
-            selectAllFiles(filteredFiles);
-        }
+    const handleSelectAll = () => {
+        selectAllFiles(filteredFiles);
     };
-
     
     const handleExitSelection = () => {
         clearSelection();
@@ -31,27 +27,24 @@ const SelectionBar = ({
     return (
         <div className="sticky top-0 z-10 mb-4 p-3 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-md">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium dark:text-white">
-                            {totalSelectionCount} {totalSelectionCount === 1 ? 'item' : 'items'} selected
-                        </span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
+                <div className="flex items-center">
+                    <span className="text-sm font-medium mr-4">
+                        {totalSelectionCount} {totalSelectionCount === 1 ? 'item' : 'items'} selected
+                    </span>
+                    
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleSelectAll}
+                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                            Select all
+                        </button>
+                        
                         <button
                             onClick={clearSelection}
-                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                             Clear
-                        </button>
-
-                        <button
-                            onClick={handleSelectAllFiles}
-                            className="text-xs text-gray-700 dark:text-gray-300 hover:text-indigo-700 dark:hover:text-indigo-300 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 flex items-center"
-                        >
-                            <Check size={14} className="mr-1" />
-                            Select all files
                         </button>
                     </div>
                 </div>
@@ -59,15 +52,16 @@ const SelectionBar = ({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onDeleteSelected}
-                        className="px-3 py-1.5 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800/50 flex items-center gap-1"
+                        disabled={totalSelectionCount === 0}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Trash2 size={16} />
-                        <span className="hidden sm:inline">Delete</span>
+                        <span>Delete</span>
                     </button>
 
                     <button
                         onClick={handleExitSelection}
-                        className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex items-center gap-1"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
                         <X size={16} />
                         <span>Exit selection</span>

@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useSearch } from '@/Pages/Context/SearchContext.jsx';
 import { useMultiSelect } from '@/Pages/MultiSelectProvider.jsx';
 
-
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
 import FolderBreadcrumb from '@/Pages/Folders/FolderBreadcrumb';
@@ -27,43 +26,42 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
-
+    
     
     const [folderToRename, setFolderToRename] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
-
     
-    const [dragActive, setDragActive] = useState(false);
+    
     const [processingFolder, setProcessingFolder] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(null);
     const [showBulkMoveDropdown, setShowBulkMoveDropdown] = useState(false);
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
-
+    
     
     const [data, setData] = useState({ file: null });
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [progress, setProgress] = useState(null);
-
+    
     
     const { searchTerm, isSearching } = useSearch();
     const [filteredFolders, setFilteredFolders] = useState(folders);
     const [filteredFiles, setFilteredFiles] = useState(files);
     const [totalResults, setTotalResults] = useState(0);
-
+    
     
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const bulkActionDropdownRef = useRef(null);
-
+    
     
     const { getSelectionCount, clearSelection, selectedItems, toggleSelectionMode, isSelectionMode } = useMultiSelect();
-
+    
     
     const isAuthenticated = auth && auth.user;
-
+    
     
     useEffect(() => {
         setLoadingDestinations(true);
@@ -79,7 +77,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 setLoadingDestinations(false);
             });
     }, [currentFolder]);
-
+    
     
     useEffect(() => {
         function handleClickOutside(event) {
@@ -94,7 +92,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef, bulkActionDropdownRef]);
-
+    
     
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -110,7 +108,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         setFilteredFiles(matchingFiles);
         setTotalResults(matchingFolders.length + matchingFiles.length);
     }, [searchTerm, folders, files]);
-
+    
     
     const [showMultiActionPanel, setShowMultiActionPanel] = useState(false);
 
@@ -118,7 +116,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         const selectionCount = getSelectionCount();
         setShowMultiActionPanel(selectionCount > 0 && isSelectionMode);
     }, [selectedItems, getSelectionCount, isSelectionMode]);
-
+    
     
     const handleMoveFile = (fileId, folderId) => {
         setDropdownOpen(null);
@@ -137,14 +135,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-
+    
     const handleBulkMove = (destinationFolderId) => {
         setShowBulkMoveDropdown(false);
-
+        
         
         if (selectedItems.files.length > 0) {
             const fileIds = selectedItems.files.map(file => file.id);
-
             
             if (destinationFolderId === null) {
                 
@@ -153,7 +150,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        
                         router.reload({ only: ['files'] });
                         if (selectedItems.folders.length === 0) {
                             clearSelection();
@@ -172,7 +168,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        
                         router.reload({ only: ['files'] });
                         if (selectedItems.folders.length === 0) {
                             clearSelection();
@@ -190,7 +185,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         
         if (selectedItems.folders.length > 0) {
             const folderIds = selectedItems.folders.map(folder => folder.id);
-
             
             if (destinationFolderId === null) {
                 
@@ -199,7 +193,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        
                         router.reload();
                         clearSelection();
                         toggleSelectionMode();
@@ -216,7 +209,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        
                         router.reload();
                         clearSelection();
                         toggleSelectionMode();
@@ -232,24 +224,22 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
 
     
     const handleBulkDelete = () => {
-        
         if (!confirm(`Move ${getSelectionCount()} selected items to trash?`)) {
             return;
         }
-
+        
         
         selectedItems.files.forEach(file => {
             router.delete(route('files.destroy', file.id), {
                 preserveScroll: true
             });
         });
-
+        
         
         selectedItems.folders.forEach((folder, index) => {
             router.delete(route('folders.destroy', folder.id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    
                     if (index === selectedItems.folders.length - 1) {
                         router.reload();
                         clearSelection();
@@ -259,13 +249,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-    const handleSelectAll = () => {
-        
-        if (filteredFiles) {
-            selectAllFiles(filteredFiles);
-        }
-    };
-
+    
     const handleUpload = () => setShowUploadModal(true);
     const handleNewFolder = () => setShowFolderModal(true);
     const handleFileUpload = () => fileInputRef.current.click();
@@ -273,22 +257,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const handleFileChange = (e) => {
         if (e.target.files.length > 0) {
             setData({ ...data, file: e.target.files[0] });
-        }
-    };
-
-    const handleDrag = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(e.type === "dragenter" || e.type === "dragover");
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        if (e.dataTransfer.files?.[0]) {
-            setData({ ...data, file: e.dataTransfer.files[0] });
-            setShowUploadModal(true);
         }
     };
 
@@ -311,6 +279,10 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                 setShowUploadModal(false);
                 setData({ file: null });
                 setProgress(null);
+                setErrors({});
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = ""; 
+                }
                 window.location.reload();
             })
             .catch(err => {
@@ -319,6 +291,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             .finally(() => setProcessing(false));
     };
 
+    
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
         if (currentFolder) {
@@ -333,6 +306,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             .finally(() => setProcessingFolder(false));
     };
 
+    
     const toggleDropdown = (fileId) => {
         setDropdownOpen(prev => (prev === fileId ? null : fileId));
     };
@@ -388,7 +362,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             }
         });
     };
-
     
     return (
         <>
@@ -396,13 +369,7 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
                 <Sidebar expanded={true} onCreateNew={(type) => type === 'folder' ? handleNewFolder() : handleUpload()} />
-                <div
-                    className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900"
-                    onDragOver={handleDrag}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDrop={handleDrop}
-                >
+                <div className="flex-1 p-4 overflow-auto bg-gray-50 dark:bg-gray-900">
                     <Header isAuthenticated={isAuthenticated} auth={auth} onUserDropdownToggle={() => {}} />
                     <FolderBreadcrumb breadcrumbs={breadcrumbs} />
 
@@ -475,11 +442,11 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     setData({ file: null });
                     setProgress(null);
                     setErrors({});
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
                 }}
                 file={data.file}
-                dragActive={dragActive}
-                handleDrag={handleDrag}
-                handleDrop={handleDrop}
                 handleFileUpload={handleFileUpload}
                 handleFileChange={handleFileChange}
                 handleSubmit={handleSubmit}

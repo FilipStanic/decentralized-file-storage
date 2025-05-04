@@ -2,26 +2,22 @@ import React from 'react';
 import { X, File, FilePlus } from 'lucide-react';
 
 export const UploadModal = ({
-                                isOpen,
-                                onClose,
-                                file,
-                                dragActive,
-                                handleDrag,
-                                handleDrop,
-                                handleFileUpload,
-                                handleFileChange,
-                                handleSubmit,
-                                fileInputRef,
-                                processing,
-                                errors,
-                                progress,
-                                folderId
-                            }) => {
+    isOpen,
+    onClose,
+    file,
+    handleFileUpload,
+    handleFileChange,
+    handleSubmit,
+    fileInputRef,
+    processing,
+    errors,
+    progress,
+    folderId
+}) => {
     if (!isOpen) return null;
 
     const submitWithFolder = (e) => {
         e.preventDefault();
-
 
         const formData = new FormData();
         formData.append('file', file);
@@ -32,6 +28,14 @@ export const UploadModal = ({
         handleSubmit(e);
     };
 
+    
+    const clearAndCloseModal = () => {
+        if (fileInputRef && fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div
@@ -39,24 +43,14 @@ export const UploadModal = ({
             >
                 <div className="flex justify-between items-center border-b dark:border-gray-700 px-6 py-4">
                     <h3 className="text-lg font-medium dark:text-white">Upload File</h3>
-                    <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                    <button onClick={clearAndCloseModal} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                         <X size={20} />
                     </button>
                 </div>
 
                 <form onSubmit={submitWithFolder}>
                     <div className="px-6 py-4">
-                        <div
-                            className={`border-2 border-dashed rounded-lg p-8 text-center ${
-                                dragActive
-                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                                    : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                            onDragEnter={handleDrag}
-                            onDragOver={handleDrag}
-                            onDragLeave={handleDrag}
-                            onDrop={handleDrop}
-                        >
+                        <div className="border-2 border-dashed rounded-lg p-8 text-center border-gray-300 dark:border-gray-600">
                             {file ? (
                                 <div className="flex flex-col items-center">
                                     <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-3">
@@ -71,9 +65,11 @@ export const UploadModal = ({
                                         <FilePlus size={24} className="text-gray-500 dark:text-gray-400" />
                                     </div>
                                     <p className="font-medium text-gray-900 dark:text-white">
-                                        Drop your file here, or <button type="button" onClick={handleFileUpload} className="text-indigo-600 dark:text-indigo-400">browse</button>
+                                        <button type="button" onClick={handleFileUpload} className="text-indigo-600 dark:text-indigo-400 px-4 py-2 border border-indigo-600 dark:border-indigo-400 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+                                            Select a file
+                                        </button>
                                     </p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Maximum file size: 100MB</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">Maximum file size: 100MB</p>
                                 </div>
                             )}
                         </div>
@@ -107,7 +103,7 @@ export const UploadModal = ({
                         <button
                             type="button"
                             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
-                            onClick={onClose}
+                            onClick={clearAndCloseModal}
                         >
                             Cancel
                         </button>
