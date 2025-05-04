@@ -230,7 +230,7 @@ const GlobalSelectionBar = ({ contextItems = [], currentFolderId = null }) => {
                                 ref={dropdownRef}
                                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700 max-h-60 overflow-y-auto"
                             >
-                                <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">
+                                <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium ">
                                     Move selected items to
                                 </div>
 
@@ -238,12 +238,6 @@ const GlobalSelectionBar = ({ contextItems = [], currentFolderId = null }) => {
                                     <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                                 ) : (
                                     <>
-                                        <button
-                                            onClick={() => handleMoveToFolder(null)}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                        >
-                                            Root folder
-                                        </button>
 
                                         {availableFolders.length > 0 && (
                                             <div className="border-t dark:border-gray-700 my-1"></div>

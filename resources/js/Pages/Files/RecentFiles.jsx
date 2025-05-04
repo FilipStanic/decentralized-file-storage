@@ -217,9 +217,7 @@ export const RecentFiles = ({ recentFiles }) => {
                                     {dropdownOpen === file.id && (
                                         <div ref={dropdownRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 py-1 border dark:border-gray-700">
                                             <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium border-b dark:border-gray-700">Move to folder</div>
-                                            <button onClick={() => handleMoveFile(file.id, null)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                Root folder
-                                            </button>
+
                                             {loadingFolders ? (
                                                 <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                                             ) : (

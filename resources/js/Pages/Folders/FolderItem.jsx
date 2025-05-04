@@ -16,14 +16,14 @@ const FolderItem = ({ folder, onRenameClick }) => {
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(false);
 
-    // Get multi-select functionality
+    
     const {
         isSelectionMode,
         toggleFolderSelection,
         isFolderSelected
     } = useMultiSelect();
 
-    // Check if this folder is selected
+    
     const isSelected = isFolderSelected(folder.id);
 
     useEffect(() => {
@@ -74,7 +74,7 @@ const FolderItem = ({ folder, onRenameClick }) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // If opening the dropdown, load available folders
+        
         if (!dropdownOpen) {
             setLoadingDestinations(true);
             axios.get(route('sidebar.available-folders', { current_folder_id: folder.id }))
@@ -99,7 +99,7 @@ const FolderItem = ({ folder, onRenameClick }) => {
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                // Refresh the page to show the updated folder structure
+                
                 router.reload({ only: ['folders'] });
             },
             onError: (errors) => {

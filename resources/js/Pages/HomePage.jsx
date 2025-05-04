@@ -37,15 +37,19 @@ export const HomePage = ({ auth, recentFiles = [], quickAccessFiles = [] }) => {
     });
 
     useEffect(() => {
-        if (!searchTerm.trim()) {
-            setFilteredRecentFiles(recentFiles);
-            setFilteredQuickAccessFiles(quickAccessFiles);
-            setUniqueResultsCount(0);
-        } else {
-            performSearch(searchTerm, recentFiles, quickAccessFiles);
-        }
-    }, [recentFiles, quickAccessFiles, searchTerm]);
-
+        const delayDebounce = setTimeout(() => {
+            if (!searchTerm.trim()) {
+                setFilteredRecentFiles(recentFiles);
+                setFilteredQuickAccessFiles(quickAccessFiles);
+                setUniqueResultsCount(0);
+            } else {
+                performSearch(searchTerm, recentFiles, quickAccessFiles);
+            }
+        }, 300);
+    
+        return () => clearTimeout(delayDebounce);
+    }, [searchTerm, recentFiles, quickAccessFiles]);
+    
     useEffect(() => {
         function handleClickOutside(event) {
             if (

@@ -79,12 +79,7 @@ const MultiActionPanel = ({
                                 <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
                             ) : (
                                 <>
-                                    <button
-                                        onClick={() => handleBulkMove(null)}
-                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    >
-                                        Root
-                                    </button>
+
 
                                     {destinationFolders.length > 0 && (
                                         <div className="border-t dark:border-gray-700 my-1"></div>
