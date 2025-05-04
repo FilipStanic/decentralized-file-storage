@@ -32,7 +32,6 @@ const StorageIndicator = () => {
         return 'bg-red-600';
     };
 
-    
     const getVisiblePercentage = (percentage) => {
         return percentage <= 0 ? 0.5 : Math.max(0.5, percentage);
     };
@@ -112,11 +111,7 @@ const StorageIndicator = () => {
                 )}
             </div>
 
-            <div className="pt-2 text-right">
-                <a href="#" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                    Upgrade
-                </a>
-            </div>
+
         </div>
     );
 };

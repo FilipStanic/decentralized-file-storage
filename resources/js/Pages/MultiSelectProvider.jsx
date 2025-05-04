@@ -1,6 +1,5 @@
-
-
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import { router } from '@inertiajs/react';
 
 const MultiSelectContext = createContext();
 
@@ -26,7 +25,6 @@ export const MultiSelectProvider = ({ children }) => {
     const toggleSelectionMode = useCallback(() => {
         setIsSelectionMode(prev => !prev);
         if (isSelectionMode) {
-            
             clearSelection();
         }
     }, [isSelectionMode]);
@@ -125,7 +123,6 @@ export const MultiSelectProvider = ({ children }) => {
 
     
     useEffect(() => {
-        
         if (isSelectionMode) {
             sessionStorage.setItem('multiSelectState', JSON.stringify({
                 isSelectionMode,
@@ -150,6 +147,24 @@ export const MultiSelectProvider = ({ children }) => {
             }
         }
     }, []);
+
+    
+    useEffect(() => {
+        
+        const handlePageChange = () => {
+            clearSelection();
+            setIsSelectionMode(false);
+            sessionStorage.removeItem('multiSelectState');
+        };
+
+        
+        document.addEventListener('inertia:before', handlePageChange);
+        
+        
+        return () => {
+            document.removeEventListener('inertia:before', handlePageChange);
+        };
+    }, [clearSelection]);
 
     const value = {
         selectedItems,
