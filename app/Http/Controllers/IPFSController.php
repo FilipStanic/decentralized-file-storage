@@ -143,7 +143,24 @@ class IPFSController extends Controller
     public function storageStats()
     {
         $user = Auth::user();
-
+    
+        if (!$user) {
+            return response()->json([
+                'ipfs' => [
+                    'used' => '0 B',
+                    'percentage' => 0,
+                    'limit' => config('storage.ipfs_limit', '1.00 GB'),
+                ],
+                'local' => [
+                    'used' => '0 B',
+                    'percentage' => 0,
+                    'limit' => config('storage.local_limit', '50.00 GB'),
+                ]
+            ]);
+        }
+    
+        $user = $user->fresh();
+        
         return response()->json([
             'ipfs' => [
                 'used' => $user->formatted_ipfs_storage_used,

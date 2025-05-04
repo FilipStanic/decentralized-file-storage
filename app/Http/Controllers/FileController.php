@@ -120,37 +120,42 @@ class FileController extends Controller
 
 
 
-public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'file' => 'required|file|max:102400',
             'folder_id' => 'nullable|exists:folders,id',
         ]);
-
+    
         $file = $request->file('file');
         $user = Auth::user();
 
+        $userDirectory = 'files/' . $user->id;
+        if (!Storage::disk('private')->exists($userDirectory)) {
+            Storage::disk('private')->makeDirectory($userDirectory);
+        }
+    
         $localStorageLimit = 50 * 1024 * 1024 * 1024;
         if ($user->local_storage_used + $file->getSize() > $localStorageLimit) {
             return redirect()->back()->with('error', 'Local storage limit reached (50GB). Please delete some files first.');
         }
-
+    
         if ($request->folder_id) {
             $folder = Folder::findOrFail($request->folder_id);
             if (Gate::denies('addFiles', $folder)) { abort(403); }
         }
-
+    
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('files/' . $user->id, $filename, 'private');
         $mimeType = $file->getMimeType();
         $type = 'Other';
-
+    
         if (strpos($mimeType, 'image') !== false) { $type = 'Image'; }
         elseif (strpos($mimeType, 'pdf') !== false) { $type = 'PDF'; }
         elseif (strpos($mimeType, 'spreadsheet') !== false || strpos($mimeType, 'excel') !== false) { $type = 'Spreadsheet'; }
         elseif (strpos($mimeType, 'presentation') !== false || strpos($mimeType, 'powerpoint') !== false) { $type = 'Presentation'; }
         elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'document') !== false) { $type = 'Document'; }
-
+    
         $fileRecord = $user->files()->create([
             'name' => $file->getClientOriginalName(),
             'original_name' => $file->getClientOriginalName(),
@@ -164,9 +169,10 @@ public function store(Request $request)
             'ipfs_hash' => null,
             'ipfs_url' => null,
         ]);
-
+    
         return redirect()->back()->with('success', 'File uploaded successfully to local storage');
     }
+    
 
     public function download($id)
     {

@@ -22,7 +22,6 @@ const FileListItem = ({
     const { isSelectionMode, toggleFileSelection, isFileSelected } = useMultiSelect();
     const isSelected = isFileSelected(file.id);
 
-    // Action buttons for file operations
     const renderActionButtons = () => (
         <div className="col-span-7 sm:col-span-4 md:col-span-2 flex items-center justify-end gap-1.5 flex-wrap py-1">
             <button
@@ -65,13 +64,18 @@ const FileListItem = ({
         <div
             key={file.id}
             className={`grid grid-cols-12 px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm items-center ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+            onClick={isSelectionMode ? () => toggleFileSelection(file) : undefined}
+            style={isSelectionMode ? { cursor: 'pointer' } : undefined}
         >
             <div className="col-span-5 md:col-span-6 flex items-center gap-2 overflow-hidden">
                 {isSelectionMode && (
                     <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleFileSelection(file)}
+                        onChange={(e) => {
+                            e.stopPropagation(); 
+                            toggleFileSelection(file);
+                        }}
                         className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                 )}
@@ -90,7 +94,7 @@ const FileListItem = ({
                 {file.lastModified}
             </div>
 
-            {renderActionButtons()}
+            {!isSelectionMode && renderActionButtons()}
         </div>
     );
 };

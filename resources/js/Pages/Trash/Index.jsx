@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import { router } from '@inertiajs/core';
-import { Trash2, RefreshCw, File, FolderIcon, AlertCircle, FilePlus } from 'lucide-react';
+import { Trash2, RefreshCw, File, FolderIcon, AlertCircle, Star, FilePlus } from 'lucide-react';
 import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
 import UploadModal from '@/Pages/UploadModal';
@@ -23,6 +23,11 @@ const TrashItem = ({ item, onRestore, onDelete }) => {
                 {item.item_type === 'folder' && item.item_count > 0 && (
                     <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 whitespace-nowrap">
                         ({item.item_count} {item.item_count === 1 ? 'item' : 'items'})
+                    </span>
+                )}
+                {item.starred && (
+                    <span className="flex items-center ml-1">
+                        <Star size={14} className="text-yellow-400 fill-yellow-400" />
                     </span>
                 )}
             </div>
@@ -52,6 +57,7 @@ const TrashItem = ({ item, onRestore, onDelete }) => {
         </div>
     );
 };
+
 
 export default function TrashIndex({ auth, trashedFiles, trashedFolders }) {
     const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);

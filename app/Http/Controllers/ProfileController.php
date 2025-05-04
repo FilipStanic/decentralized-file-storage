@@ -61,9 +61,11 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if (!Storage::disk('public')->exists('profile_pictures')) {
+            Storage::disk('public')->makeDirectory('profile_pictures');
+        }
 
         if ($user->profile_picture && !str_contains($user->profile_picture, 'default-avatar.png') && !str_contains($user->profile_picture, 'images/default')) {
-
             $path = str_replace('/storage/', '', $user->profile_picture);
             Storage::disk('public')->delete($path);
         }
@@ -76,6 +78,7 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Profile picture updated successfully.');
     }
+
 
     public function removeProfilePicture(Request $request)
     {

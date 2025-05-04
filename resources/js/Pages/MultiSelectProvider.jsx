@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+
+
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 
 const MultiSelectContext = createContext();
 
@@ -64,28 +66,38 @@ export const MultiSelectProvider = ({ children }) => {
     
     
     const selectAllFiles = useCallback((files) => {
-        if (!files) return;
+        if (!files || !Array.isArray(files) || files.length === 0) return;
         
-        
-        const filesArray = Array.isArray(files) ? files : [];
-
-        setSelectedItems(prev => ({
-            ...prev,
-            files: [...filesArray]
-        }));
+        setSelectedItems(prev => {
+            
+            const existingFileIds = new Set(prev.files.map(f => f.id));
+            
+            
+            const newFiles = files.filter(file => !existingFileIds.has(file.id));
+            
+            return {
+                ...prev,
+                files: [...prev.files, ...newFiles]
+            };
+        });
     }, []);
     
     
     const selectAllFolders = useCallback((folders) => {
-        if (!folders) return;
+        if (!folders || !Array.isArray(folders) || folders.length === 0) return;
         
-        
-        const foldersArray = Array.isArray(folders) ? folders : [];
-
-        setSelectedItems(prev => ({
-            ...prev,
-            folders: [...foldersArray]
-        }));
+        setSelectedItems(prev => {
+            
+            const existingFolderIds = new Set(prev.folders.map(f => f.id));
+            
+            
+            const newFolders = folders.filter(folder => !existingFolderIds.has(folder.id));
+            
+            return {
+                ...prev,
+                folders: [...prev.folders, ...newFolders]
+            };
+        });
     }, []);
     
     
@@ -103,6 +115,42 @@ export const MultiSelectProvider = ({ children }) => {
         return selectedItems.files.length + selectedItems.folders.length;
     }, [selectedItems]);
 
+    
+    const deselectItems = useCallback((fileIds = [], folderIds = []) => {
+        setSelectedItems(prev => ({
+            files: prev.files.filter(file => !fileIds.includes(file.id)),
+            folders: prev.folders.filter(folder => !folderIds.includes(folder.id))
+        }));
+    }, []);
+
+    
+    useEffect(() => {
+        
+        if (isSelectionMode) {
+            sessionStorage.setItem('multiSelectState', JSON.stringify({
+                isSelectionMode,
+                selectedItems
+            }));
+        } else {
+            sessionStorage.removeItem('multiSelectState');
+        }
+    }, [isSelectionMode, selectedItems]);
+
+    
+    useEffect(() => {
+        const savedState = sessionStorage.getItem('multiSelectState');
+        if (savedState) {
+            try {
+                const { isSelectionMode: savedMode, selectedItems: savedItems } = JSON.parse(savedState);
+                setIsSelectionMode(savedMode);
+                setSelectedItems(savedItems);
+            } catch (e) {
+                console.error('Error restoring multi-select state:', e);
+                sessionStorage.removeItem('multiSelectState');
+            }
+        }
+    }, []);
+
     const value = {
         selectedItems,
         isSelectionMode,
@@ -114,7 +162,8 @@ export const MultiSelectProvider = ({ children }) => {
         selectAllFolders,
         isFileSelected,
         isFolderSelected,
-        getSelectionCount
+        getSelectionCount,
+        deselectItems
     };
 
     return (

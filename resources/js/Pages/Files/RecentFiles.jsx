@@ -36,6 +36,23 @@ export const RecentFiles = ({ recentFiles }) => {
     const [itemToDelete, setItemToDelete] = useState(null);
 
     useEffect(() => {
+        loadFolders();
+    }, []);
+
+    const loadFolders = () => {
+        setLoadingFolders(true);
+        axios.get(route('sidebar.data'))
+            .then(response => {
+                setFolders(response.data.rootFolders || []);
+                setLoadingFolders(false);
+            })
+            .catch(error => {
+                console.error('Error fetching folders:', error);
+                setLoadingFolders(false);
+            });
+    };
+
+    useEffect(() => {
         setCurrentFiles(recentFiles || []);
     }, [recentFiles]);
 
@@ -50,19 +67,6 @@ export const RecentFiles = ({ recentFiles }) => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [dropdownRef]);
-
-    useEffect(() => {
-        setLoadingFolders(true);
-        axios.get(route('sidebar.data'))
-            .then(response => {
-                setFolders(response.data.rootFolders || []);
-                setLoadingFolders(false);
-            })
-            .catch(error => {
-                console.error('Error fetching folders:', error);
-                setLoadingFolders(false);
-            });
-    }, []);
 
     const handleMoveFile = (fileId, folderId) => {
         router.post(route('files.move', fileId), {
@@ -80,6 +84,9 @@ export const RecentFiles = ({ recentFiles }) => {
     };
 
     const toggleDropdown = (fileId) => {
+        if (dropdownOpen !== fileId) {
+            loadFolders();
+        }
         setDropdownOpen(prev => (prev === fileId ? null : fileId));
     };
 
@@ -105,20 +112,16 @@ export const RecentFiles = ({ recentFiles }) => {
         }
 
         try {
-            
             setCurrentFiles(prevFiles => prevFiles.filter(f => f.id !== itemToDelete.id));
             setShowConfirmModal(false);
 
-            
             router.delete(route('files.destroy', itemToDelete.id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    
                     setItemToDelete(null);
                 },
                 onError: (errors) => {
                     console.error('Error deleting item:', errors);
-                    
                     setCurrentFiles(recentFiles);
                     alert('Failed to delete the item. Please try again.');
                     setItemToDelete(null);
@@ -136,16 +139,13 @@ export const RecentFiles = ({ recentFiles }) => {
     const handleToggleStar = (event, fileId) => {
         event.preventDefault();
 
-        
         setCurrentFiles(prevFiles =>
             prevFiles.map(f => f.id === fileId ? {...f, starred: !f.starred} : f)
         );
 
-        
         router.post(route('files.toggle-star', fileId), {}, {
             preserveScroll: true,
             onError: () => {
-                
                 setCurrentFiles(recentFiles);
             }
         });
