@@ -28,23 +28,23 @@ const SelectionBar = ({
         <div className="sticky top-0 z-10 mb-4 p-3 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-md">
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                    <span className="text-sm font-medium mr-4">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white mr-4">
                         {totalSelectionCount} {totalSelectionCount === 1 ? 'item' : 'items'} selected
                     </span>
                     
                     <div className="flex gap-2">
                         <button
                             onClick={handleSelectAll}
-                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                             Select all
                         </button>
                         
                         <button
                             onClick={clearSelection}
-                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                            Clear
+                            Deselect all
                         </button>
                     </div>
                 </div>

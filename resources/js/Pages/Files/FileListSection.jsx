@@ -12,7 +12,12 @@ const FileListSection = ({
     handleDeleteClick,
     handleMoveFile
 }) => {
-    const { isSelectionMode, selectAllFiles, clearSelection } = useMultiSelect();
+    const { 
+        isSelectionMode, 
+        selectAllFiles, 
+        clearSelection, 
+        isFileSelected 
+    } = useMultiSelect();
 
     // Simple table header
     const renderTableHeader = () => (

@@ -8,7 +8,7 @@ import Sidebar from '@/Pages/Shared/Sidebar.jsx';
 import Header from '@/Pages/Shared/Header.jsx';
 import FolderBreadcrumb from '@/Pages/Folders/FolderBreadcrumb';
 import FolderViewToolbar from '@/Pages/Folders/FolderViewToolbar';
-import MultiActionPanel from '@/Pages/Folders/MultiActionPanel';
+import SelectionBar from '@/Pages/Folders/SelectionBar';
 import FolderSection from '@/Pages/Folders/FolderSection';
 import FileListSection from '@/Pages/Files/FileListSection.jsx';
 import EmptySearchResult from '@/Pages/Folders/EmptySearchResult';
@@ -17,7 +17,6 @@ import CreateFolderModal from '@/Pages/Folders/CreateFolderModal.jsx';
 import RenameFolderModal from '@/Pages/Folders/RenameFolderModal.jsx';
 import ConfirmDeleteModal from '@/Pages/ConfirmDeleteModal.jsx';
 import FileDetailModal from '@/Pages/Files/FileDetailModal.jsx';
-import SelectionBar from './SelectionBar';
 
 export default function FolderView({ auth, currentFolder, breadcrumbs, folders, files }) {
     
@@ -27,11 +26,9 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     
-    
     const [folderToRename, setFolderToRename] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
-    
     
     const [processingFolder, setProcessingFolder] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(null);
@@ -39,29 +36,23 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
     const [destinationFolders, setDestinationFolders] = useState([]);
     const [loadingDestinations, setLoadingDestinations] = useState(true);
     
-    
     const [data, setData] = useState({ file: null });
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [progress, setProgress] = useState(null);
-    
     
     const { searchTerm, isSearching } = useSearch();
     const [filteredFolders, setFilteredFolders] = useState(folders);
     const [filteredFiles, setFilteredFiles] = useState(files);
     const [totalResults, setTotalResults] = useState(0);
     
-    
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const bulkActionDropdownRef = useRef(null);
     
-    
     const { getSelectionCount, clearSelection, selectedItems, toggleSelectionMode, isSelectionMode } = useMultiSelect();
     
-    
     const isAuthenticated = auth && auth.user;
-    
     
     useEffect(() => {
         setLoadingDestinations(true);
@@ -78,7 +69,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             });
     }, [currentFolder]);
     
-    
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -92,7 +82,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef, bulkActionDropdownRef]);
-    
     
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -108,15 +97,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         setFilteredFiles(matchingFiles);
         setTotalResults(matchingFolders.length + matchingFiles.length);
     }, [searchTerm, folders, files]);
-    
-    
-    const [showMultiActionPanel, setShowMultiActionPanel] = useState(false);
-
-    useEffect(() => {
-        const selectionCount = getSelectionCount();
-        setShowMultiActionPanel(selectionCount > 0 && isSelectionMode);
-    }, [selectedItems, getSelectionCount, isSelectionMode]);
-    
     
     const handleMoveFile = (fileId, folderId) => {
         setDropdownOpen(null);
@@ -135,16 +115,13 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-    
     const handleBulkMove = (destinationFolderId) => {
         setShowBulkMoveDropdown(false);
-        
         
         if (selectedItems.files.length > 0) {
             const fileIds = selectedItems.files.map(file => file.id);
             
             if (destinationFolderId === null) {
-                
                 router.post(route('folders.move-files-to-root'), {
                     file_ids: fileIds
                 }, {
@@ -162,7 +139,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     }
                 });
             } else {
-                
                 router.post(route('folders.move-files', destinationFolderId), {
                     file_ids: fileIds
                 }, {
@@ -182,12 +158,10 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             }
         }
 
-        
         if (selectedItems.folders.length > 0) {
             const folderIds = selectedItems.folders.map(folder => folder.id);
             
             if (destinationFolderId === null) {
-                
                 router.post(route('folders.move-folders-to-root'), {
                     folder_ids: folderIds
                 }, {
@@ -203,7 +177,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                     }
                 });
             } else {
-                
                 router.post(route('folders.move-folders', destinationFolderId), {
                     folder_ids: folderIds
                 }, {
@@ -222,19 +195,16 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         }
     };
 
-    
     const handleBulkDelete = () => {
         if (!confirm(`Move ${getSelectionCount()} selected items to trash?`)) {
             return;
         }
-        
         
         selectedItems.files.forEach(file => {
             router.delete(route('files.destroy', file.id), {
                 preserveScroll: true
             });
         });
-        
         
         selectedItems.folders.forEach((folder, index) => {
             router.delete(route('folders.destroy', folder.id), {
@@ -249,7 +219,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
         });
     };
 
-    
     const handleUpload = () => setShowUploadModal(true);
     const handleNewFolder = () => setShowFolderModal(true);
     const handleFileUpload = () => fileInputRef.current.click();
@@ -291,7 +260,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             .finally(() => setProcessing(false));
     };
 
-    
     const handleCreateFolder = (folderData) => {
         setProcessingFolder(true);
         if (currentFolder) {
@@ -306,7 +274,6 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
             .finally(() => setProcessingFolder(false));
     };
 
-    
     const toggleDropdown = (fileId) => {
         setDropdownOpen(prev => (prev === fileId ? null : fileId));
     };
@@ -384,22 +351,10 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                         />
                     )}
 
+                    {/* Only render the SelectionBar when in selection mode */}
                     {isSelectionMode && (
                         <SelectionBar
                             onDeleteSelected={handleBulkDelete}
-                            filteredFiles={filteredFiles}
-                        />
-                    )}
-
-                    {showMultiActionPanel && (
-                        <MultiActionPanel
-                            showBulkMoveDropdown={showBulkMoveDropdown}
-                            setShowBulkMoveDropdown={setShowBulkMoveDropdown}
-                            bulkActionDropdownRef={bulkActionDropdownRef}
-                            destinationFolders={destinationFolders}
-                            loadingDestinations={loadingDestinations}
-                            handleBulkMove={handleBulkMove}
-                            handleBulkDelete={handleBulkDelete}
                             filteredFiles={filteredFiles}
                         />
                     )}
@@ -415,15 +370,10 @@ export default function FolderView({ auth, currentFolder, breadcrumbs, folders, 
                         isSearching={isSearching}
                         searchTerm={searchTerm}
                         currentFolder={currentFolder}
-                        dropdownOpen={dropdownOpen}
-                        toggleDropdown={toggleDropdown}
                         handleShowDetails={handleShowDetails}
                         handleFileToggleStar={handleFileToggleStar}
                         handleDeleteClick={handleDeleteClick}
                         handleMoveFile={handleMoveFile}
-                        loadingDestinations={loadingDestinations}
-                        destinationFolders={destinationFolders}
-                        dropdownRef={dropdownRef}
                     />
 
                     {isSearching && totalResults === 0 && (
