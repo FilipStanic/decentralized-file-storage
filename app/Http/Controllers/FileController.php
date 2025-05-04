@@ -93,7 +93,6 @@ class FileController extends Controller
                     ];
                 });
 
-            // Convert collections to arrays before merging
             $quickAccessItems = collect(array_merge(
                 $quickAccessFiles->toArray(),
                 $starredFolders->toArray()

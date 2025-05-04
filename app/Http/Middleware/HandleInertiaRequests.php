@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            // Add this shared prop logic
+            
             'sharedSidebarFolders' => function () use ($request) {
                 if ($user = $request->user()) {
                     return $user->folders()
