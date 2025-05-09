@@ -79,7 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getIpfsStoragePercentageAttribute()
     {
-        $limit = 1 * 1024 * 1024 * 1024; // 1GB in bytes
+        $limit = 1 * 1024 * 1024 * 1024;
         $percentage = ($this->ipfs_storage_used / $limit) * 100;
         return min(round($percentage, 1), 100);
     }
@@ -106,7 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasEnoughIpfsStorage($fileSize)
     {
-        $limit = 1 * 1024 * 1024 * 1024; // 1GB in bytes
+        $limit = 1 * 1024 * 1024 * 1024;
         return ($this->ipfs_storage_used + $fileSize) <= $limit;
     }
 

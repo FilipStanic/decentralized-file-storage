@@ -12,39 +12,39 @@ export const useDragDrop = () => {
 };
 
 export const DragDropProvider = ({ children }) => {
-    // Track the item being dragged
+    
     const [draggedItem, setDraggedItem] = useState(null);
 
-    // Track current drag operation
+    
     const [isDragging, setIsDragging] = useState(false);
 
-    // Track where we can drop
+    
     const [dropTargets, setDropTargets] = useState({
         folders: [],
         trash: false
     });
 
-    // Store information about source and target for drag operations
+    
     const dragInfo = useRef({
         sourceElement: null,
         dragStartX: 0,
         dragStartY: 0
     });
 
-    // Start dragging a file
+    
     const startDraggingFile = useCallback((file, event) => {
         event.dataTransfer.effectAllowed = 'move';
         setDraggedItem({ type: 'file', item: file });
         setIsDragging(true);
 
-        // Store starting position for visual feedback
+        
         dragInfo.current = {
             sourceElement: event.target,
             dragStartX: event.clientX,
             dragStartY: event.clientY
         };
 
-        // Set a drag image (optional)
+        
         const dragImage = document.createElement('div');
         dragImage.classList.add('drag-preview');
         dragImage.textContent = file.name;
@@ -53,26 +53,26 @@ export const DragDropProvider = ({ children }) => {
         document.body.appendChild(dragImage);
         event.dataTransfer.setDragImage(dragImage, 0, 0);
 
-        // Clean up after drag image is captured
+        
         setTimeout(() => {
             document.body.removeChild(dragImage);
         }, 0);
     }, []);
 
-    // Start dragging a folder
+    
     const startDraggingFolder = useCallback((folder, event) => {
         event.dataTransfer.effectAllowed = 'move';
         setDraggedItem({ type: 'folder', item: folder });
         setIsDragging(true);
 
-        // Store starting position
+        
         dragInfo.current = {
             sourceElement: event.target,
             dragStartX: event.clientX,
             dragStartY: event.clientY
         };
 
-        // Set a drag image (optional)
+        
         const dragImage = document.createElement('div');
         dragImage.classList.add('drag-preview');
         dragImage.textContent = folder.name;
@@ -81,13 +81,13 @@ export const DragDropProvider = ({ children }) => {
         document.body.appendChild(dragImage);
         event.dataTransfer.setDragImage(dragImage, 0, 0);
 
-        // Clean up after drag image is captured
+        
         setTimeout(() => {
             document.body.removeChild(dragImage);
         }, 0);
     }, []);
 
-    // Start dragging multiple items
+    
     const startDraggingMultiple = useCallback((files, folders, event) => {
         event.dataTransfer.effectAllowed = 'move';
         setDraggedItem({
@@ -99,14 +99,14 @@ export const DragDropProvider = ({ children }) => {
         });
         setIsDragging(true);
 
-        // Store starting position
+        
         dragInfo.current = {
             sourceElement: event.target,
             dragStartX: event.clientX,
             dragStartY: event.clientY
         };
 
-        // Set a drag image for multiple items
+        
         const dragImage = document.createElement('div');
         dragImage.classList.add('drag-preview');
         const totalItems = files.length + folders.length;
@@ -116,19 +116,19 @@ export const DragDropProvider = ({ children }) => {
         document.body.appendChild(dragImage);
         event.dataTransfer.setDragImage(dragImage, 0, 0);
 
-        // Clean up after drag image is captured
+        
         setTimeout(() => {
             document.body.removeChild(dragImage);
         }, 0);
     }, []);
 
-    // Process drop into a folder
+    
     const handleDropInFolder = useCallback((targetFolderId, event) => {
         event.preventDefault();
 
         if (!draggedItem) return;
 
-        // Handle single file drop
+        
         if (draggedItem.type === 'file') {
             const file = draggedItem.item;
             router.post(route('files.move', file.id), {
@@ -136,16 +136,16 @@ export const DragDropProvider = ({ children }) => {
             }, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    // Refresh content after drop
+                    
                     router.reload({ only: ['files'] });
                 }
             });
         }
-        // Handle single folder drop
+        
         else if (draggedItem.type === 'folder') {
             const folder = draggedItem.item;
 
-            // Prevent dropping a folder into itself or its children
+            
             if (folder.id === targetFolderId) {
                 console.error("Cannot move a folder into itself");
                 return;
@@ -156,16 +156,16 @@ export const DragDropProvider = ({ children }) => {
             }, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    // Refresh content after drop
+                    
                     router.reload({ only: ['folders'] });
                 }
             });
         }
-        // Handle multiple items drop
+        
         else if (draggedItem.type === 'multiple') {
             const { files, folders } = draggedItem.items;
 
-            // Move files if there are any
+            
             if (files.length > 0) {
                 const fileIds = files.map(file => file.id);
                 router.post(route('folders.move-files', targetFolderId), {
@@ -175,7 +175,7 @@ export const DragDropProvider = ({ children }) => {
                 });
             }
 
-            // Move folders if there are any
+            
             if (folders.length > 0) {
                 const folderIds = folders.map(folder => folder.id);
                 router.post(route('folders.move-folders', targetFolderId), {
@@ -183,49 +183,49 @@ export const DragDropProvider = ({ children }) => {
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        // Refresh content after all operations
+                        
                         router.reload({ only: ['folders', 'files'] });
                     }
                 });
             }
         }
 
-        // Reset drag state
+        
         setIsDragging(false);
         setDraggedItem(null);
     }, [draggedItem]);
 
-    // Process drop into trash
+    
     const handleDropInTrash = useCallback((event) => {
         event.preventDefault();
 
         if (!draggedItem) return;
 
-        // Handle single file
+        
         if (draggedItem.type === 'file') {
             router.delete(route('files.destroy', draggedItem.item.id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    // Refresh files list
+                    
                     router.reload({ only: ['files'] });
                 }
             });
         }
-        // Handle single folder
+        
         else if (draggedItem.type === 'folder') {
             router.delete(route('folders.destroy', draggedItem.item.id), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    // Refresh folders list
+                    
                     router.reload({ only: ['folders'] });
                 }
             });
         }
-        // Handle multiple items
+        
         else if (draggedItem.type === 'multiple') {
             const { files, folders } = draggedItem.items;
 
-            // Process files
+            
             files.forEach(file => {
                 router.post(route('trash.move'), {
                     item_type: 'file',
@@ -235,7 +235,7 @@ export const DragDropProvider = ({ children }) => {
                 });
             });
 
-            // Process folders
+            
             folders.forEach(folder => {
                 router.post(route('trash.move'), {
                     item_type: 'folder',
@@ -243,7 +243,7 @@ export const DragDropProvider = ({ children }) => {
                 }, {
                     preserveScroll: true,
                     onSuccess: () => {
-                        // Refresh after all operations
+                        
                         if (folders.indexOf(folder) === folders.length - 1) {
                             router.reload({ only: ['folders', 'files'] });
                         }
@@ -252,40 +252,40 @@ export const DragDropProvider = ({ children }) => {
             });
         }
 
-        // Reset drag state
+        
         setIsDragging(false);
         setDraggedItem(null);
     }, [draggedItem]);
 
-    // End the drag operation
+    
     const endDrag = useCallback(() => {
         setIsDragging(false);
         setDraggedItem(null);
     }, []);
 
-    // Check if a folder can be a drop target
+    
     const canDropIntoFolder = useCallback((folder) => {
         if (!draggedItem) return false;
 
-        // Can't drop into itself
+        
         if (draggedItem.type === 'folder' && draggedItem.item.id === folder.id) {
             return false;
         }
 
-        // Can't drop into a child folder
+        
         if (draggedItem.type === 'folder') {
-            // Would need to check if the target is a child of the dragged folder
-            // This would require additional logic to traverse the folder structure
+            
+            
         }
 
         return true;
     }, [draggedItem]);
 
-    // When a folder is dragged over
+    
     const handleFolderDragOver = useCallback((folder, event) => {
         event.preventDefault();
 
-        // Set drop effect
+        
         if (canDropIntoFolder(folder)) {
             event.dataTransfer.dropEffect = 'move';
         } else {
@@ -293,7 +293,7 @@ export const DragDropProvider = ({ children }) => {
         }
     }, [canDropIntoFolder]);
 
-    // Value to provide through context
+    
     const value = {
         isDragging,
         draggedItem,
